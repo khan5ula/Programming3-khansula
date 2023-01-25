@@ -36,7 +36,7 @@ public class Server implements HttpHandler {
         } else {
             String responseString = "Error: Not supported";
             byte [] bytes = responseString.getBytes("UTF-8");
-            t.sendResponseHeaders(200, bytes.length);
+            t.sendResponseHeaders(400, bytes.length);
         }
     }
 
@@ -45,7 +45,7 @@ public class Server implements HttpHandler {
         //create the http server to port 8001 with default logger
         HttpServer server = HttpServer.create(new InetSocketAddress(8001),0);
         //create context that defines path for the resource, in this case a "help"
-        server.createContext("/coordinates", new Server());
+        server.createContext("/warning", new Server());
         // creates a default executor
         server.setExecutor(null); 
         server.start(); 
