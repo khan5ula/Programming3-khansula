@@ -6,6 +6,8 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.stream.Collectors;
@@ -33,12 +35,22 @@ public class Server implements HttpHandler {
             String responseString = textStorage.toString();
             byte [] bytes = responseString.getBytes("UTF-8");
             t.sendResponseHeaders(200, bytes.length);
+            OutputStream outputStream = t.getResponseBody();
+            outputStream.write(bytes);
+            outputStream.close();
+
         } else {
             String responseString = "Error: Not supported";
             byte [] bytes = responseString.getBytes("UTF-8");
             t.sendResponseHeaders(400, bytes.length);
+            OutputStream outputStream = t.getResponseBody();
+            outputStream.write(bytes);
+            outputStream.close();
         }
     }
+    /*
+     * The response data can be sent by getting the response body from the HttpExchange object and then writing the response bytes to it. After the write, remember to flush and then close the created OutputStream.
+     */
 
 
     public static void main(String[] args) throws Exception {
