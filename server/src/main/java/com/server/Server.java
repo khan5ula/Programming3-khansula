@@ -7,7 +7,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.io.OutputStreamWriter;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.stream.Collectors;
@@ -37,6 +36,7 @@ public class Server implements HttpHandler {
             t.sendResponseHeaders(200, bytes.length);
             OutputStream outputStream = t.getResponseBody();
             outputStream.write(bytes);
+            outputStream.flush();
             outputStream.close();
 
         } else {
@@ -48,10 +48,10 @@ public class Server implements HttpHandler {
             outputStream.close();
         }
     }
+
     /*
      * The response data can be sent by getting the response body from the HttpExchange object and then writing the response bytes to it. After the write, remember to flush and then close the created OutputStream.
      */
-
 
     public static void main(String[] args) throws Exception {
         //create the http server to port 8001 with default logger
