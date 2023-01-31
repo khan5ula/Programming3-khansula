@@ -48,10 +48,6 @@ public class Server implements HttpHandler {
         }
     }
 
-    /*
-     * The response data can be sent by getting the response body from the HttpExchange object and then writing the response bytes to it. After the write, remember to flush and then close the created OutputStream.
-     */
-
     public static void main(String[] args) throws Exception {
         //create the http server to port 8001 with default logger
         HttpServer server = HttpServer.create(new InetSocketAddress(8001),0);
