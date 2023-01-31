@@ -38,7 +38,6 @@ public class Server implements HttpHandler {
             outputStream.write(bytes);
             outputStream.flush();
             outputStream.close();
-
         } else {
             String responseString = "Error: Not supported";
             byte [] bytes = responseString.getBytes("UTF-8");
