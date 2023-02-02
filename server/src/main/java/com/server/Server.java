@@ -27,13 +27,13 @@ import com.sun.net.httpserver.HttpContext;
 import com.sun.net.httpserver.HttpsParameters;
 
 
-public class Server implements HttpHandler {
+public class Server /*implements HttpHandler */{
     StringBuilder textStorage = new StringBuilder("");
 
     private Server() {
         // nothing here
     }
-
+/*
     @Override
     public void handle(HttpExchange t) throws IOException {
         try {
@@ -65,7 +65,7 @@ public class Server implements HttpHandler {
             e.printStackTrace();
         }
     }
-
+*/
     private static SSLContext serverSSLContext() throws Exception {
         /* Create a server context using a self-signed certificate */
         char[] passphrase = "password".toCharArray();
@@ -102,7 +102,7 @@ public class Server implements HttpHandler {
             // Create User Authenticator instance
             UserAuthenticator userAuthenticator = new UserAuthenticator();
             //create context that defines path for the resource, in this case a "help"
-            HttpContext httpContext = server.createContext("/warning", new Server());
+            HttpContext httpContext = server.createContext("/warning", new WarningHandler());
             httpContext.setAuthenticator(userAuthenticator);
             // creates a default executor
             // create a context for registration

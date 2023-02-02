@@ -9,7 +9,6 @@ public class UserAuthenticator extends com.sun.net.httpserver.BasicAuthenticator
     public UserAuthenticator() {
         super("warning");
         users = new Hashtable<String, String>();
-        //users.put("dummy", "passwd");
     }
 
     @Override
