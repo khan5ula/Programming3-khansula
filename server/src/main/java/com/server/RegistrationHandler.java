@@ -5,88 +5,189 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.stream.Collectors;
 
+import org.json.JSONObject;
+
+import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 
 
 public class RegistrationHandler implements HttpHandler {
-    StringBuilder inputStorage = new StringBuilder("");
-    StringBuilder errorStorage = new StringBuilder("");
-    UserAuthenticator userAuthenticator = null;
+    UserAuthenticator userAuthenticator;
 
     public RegistrationHandler(UserAuthenticator userAuthenticator) {
         this.userAuthenticator = userAuthenticator;
     }
 
     @Override
-    public void handle(HttpExchange t) throws IOException {
-        try {
-            if (t.getRequestMethod().equalsIgnoreCase("POST")) {
-                /* If the user wants to register with POST, read the input from HttpExchange request body and store it to the local variable inputStorage */
-                InputStream inputStream = t.getRequestBody();
-                String requestBody = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8)).lines().collect(Collectors.joining("\n"));
-                this.inputStorage.append(requestBody);
-                inputStream.close();
-                /* If the input was in correct format "username:password", create new user */
-                if (parseUserInformation(this.inputStorage)) {
-                    String responseString = "New user added successfully";
-                    byte [] bytes = responseString.getBytes("UTF-8");
-                    t.sendResponseHeaders(200, bytes.length);
-                    OutputStream outputStream = t.getResponseBody();
-                    outputStream.write(bytes);
-                    /* Done. Clean the output stream */
-                    outputStream.flush();
-                    outputStream.close();
-                /* If the input was in wrong format, inform the user of error and send header code 403 */
-                } else {
-                    String responseString = errorStorage.append("Adding new user failed: Username not available").toString();
-                    byte [] bytes = responseString.getBytes("UTF-8");
-                    t.sendResponseHeaders(403, bytes.length);
-                    OutputStream outputStream = t.getResponseBody();
-                    outputStream.write(bytes);
-                    /* Done. Clean the output stream */
-                    outputStream.flush();
-                    outputStream.close();
-                }
-            /* Only POST and GET are supported. In case of any other request send a general error */
-            } else {
-                String responseString = errorStorage.append("Error: Not supported").toString();
-                byte [] bytes = responseString.getBytes("UTF-8");
-                t.sendResponseHeaders(400, bytes.length);
-                OutputStream outputStream = t.getResponseBody();
-                outputStream.write(bytes);
-                /* Done. Clean the output stream */
-                outputStream.flush();
-                outputStream.close();
-            }
-            /* Flush Input and Error storages so old messages won't flood the future output to the user */
-            inputStorage.setLength(0);
-            errorStorage.setLength(0);
-        } catch (IOException e) {
-            System.out.println("Error: IOEXception occured when handling the client's request");
-            e.printStackTrace();
-        } catch (Exception e) {
-            System.out.println("Error: Error occured during registration handling");
-            e.printStackTrace();
+    public void handle(HttpExchange exchangeObject) {
+        Headers headers = exchangeObject.getRequestHeaders();
+        String newUser = "";
+        int code = 0;
+        JSONObject usertoJSON;
+
+        /* Check if the request is POST */
+        if (code == 0) {
+            code = checkRequestForPost(exchangeObject);
         }
+
+        /* Check if the header has a content type */
+        if (code == 0) {
+            code = checkContentTypeAvailability(headers);
+        }
+
+        /* Check if the content type is "aplication/json" */
+        if (code == 0) {
+            code = checkContentTypeContents(headers);
+        }
+
+        /* Read the input stream */
+        if (code == 0) {
+            try {
+                InputStream inputStream = exchangeObject.getRequestBody();
+                newUser = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8)).lines().collect(Collectors.joining("\n"));
+                inputStream.close();
+                System.out.println("Success: User information data extracted successfully");
+            } catch (Exception e) {
+                System.out.println("Error: Exception occured while processing input stream");
+            }
+        }
+
+        /* Check the validity of the content, add a new user if OK */
+        if (code == 0) {
+            if ((code = checkUserFormat(newUser.toString())) == 200) {
+                try {
+                    usertoJSON = new JSONObject(newUser);
+                    code = checkUserContent(usertoJSON);
+                    if (code == 200) {
+                        if (userAuthenticator.addUser(usertoJSON.getString("nickname"), usertoJSON.getString("password"), usertoJSON.getString("email"))) {
+                            System.out.println("Success: RegistrationHandler added the new user successfully");
+                        } else {
+                            System.out.println("Error 409: User could not be added");
+                            code = 409;
+                        }
+                    }      
+                } catch (Exception e) {
+                    System.out.println("Error during JSON parsing");
+                    e.getMessage();
+                }  
+            }
+        }
+
+        /* We've got a response code. Let's send it. Godspeed. */
+        sendResponse(code, exchangeObject);
     }
 
-    private boolean parseUserInformation(StringBuilder input) {
-        String userNameAndPassword = input.toString();
-        try {
-            String [] userInformation = userNameAndPassword.split(":", 2);
-            if (userInformation[0].length() > 1 && userInformation[1].length() > 1) {
-                if (this.userAuthenticator.addUser(userInformation[0], userInformation[1])) {
-                    return true;
+    /* Method that checks if the exchange object contains POST request */
+    private int checkRequestForPost(HttpExchange exchangeObject) {
+        if (exchangeObject.getRequestMethod().equalsIgnoreCase("POST")) {
+            System.out.println("Success: The request is POST");
+            return 0;
+        }
+        System.out.println("Error 400: The request was not POST");
+        return 400;
+    }
+
+    /* Method that checks if the exchange header has a content type */
+    private int  checkContentTypeAvailability(Headers headers) {
+        if (headers.containsKey("Content-Type")) {
+            System.out.println("Success: Content-Type found from header");
+            return 0;
+        }
+        System.out.println("Error 411: No content type found from the header");
+        return 411;
+    }
+
+    /* Method that checks if the requested content type is supported */
+    private int checkContentTypeContents(Headers headers) {
+        String contentType = headers.get("Content-Type").get(0);
+        if (contentType.equalsIgnoreCase("application/json")) {
+            System.out.println("Success: Supported Content-Type found");
+            return 0;
+        }
+        System.out.println("Error 415: Requested Content-Type is unsupported");
+        return 415;
+    }
+    
+    /* Method that checks if the given user information format is valid */
+    private int checkUserFormat(String input) {
+        if (input != null && input.length() > 0) {
+            System.out.println("Success: User information is in expected format");
+            return 200;
+        }
+        System.out.println("Error: User information is in invalid format");
+        return 412;
+    }
+
+    /* Method that checks if the given JSON is valid */
+    private int checkUserContent(JSONObject input) {
+        if (input.has("nickname") && input.getString("nickname").length() > 0) {
+            if (input.has("password") && input.getString("password").length() > 0) {
+                if (input.has("email") && input.getString(("email")).length() > 0) {
+                    System.out.println("Success: The given JSON is valid");
+                    return 200;   
                 }
             }
-        } catch (Exception e) {
-            System.out.println("Error: Invalid username or password data");
-            System.out.println(e.getMessage());
         }
-        return false;
+        System.out.println("Error: Given JSON is not valid");
+        System.out.println("No proper user credentials");
+        return 413;
+    }
+
+    /* Method that sends a response to the output stream depending on the html status code */
+    public void sendResponse(int code, HttpExchange exchangeObject) {
+        StringBuilder responseBuilder = new StringBuilder("");
+
+        switch(code) {
+            case 200:
+                responseBuilder.append("New user added successfully");
+                break;
+            case 400:
+                responseBuilder.append("Only Post requests accepted with registration service");
+                break;
+            case 409:
+                responseBuilder.append("Conflict: The nickname is already taken");
+                break;
+            case 411:
+                responseBuilder.append("Error: No content type provided");
+                break;
+            case 412:
+                responseBuilder.append("Registration failed: The given information was invalid");
+                break;
+            case 413:
+                responseBuilder.append("Registration failed: The given user credentials were not correct");
+                break;
+            case 415:
+                responseBuilder.append("Error: Requested content type is not supported");
+                break;
+            default:
+                System.out.println("Error: Cannot send response without status code");
+                responseBuilder.append("The system logic failed miserably");
+                code = 400;
+        }
+
+        String responseString = responseBuilder.toString();
+        byte[] bytes;
+
+        try {
+            bytes = responseString.getBytes("UTF-8");
+            try {
+                exchangeObject.sendResponseHeaders(code, bytes.length);
+                OutputStream outputStream = exchangeObject.getResponseBody();
+                outputStream.write(bytes);
+                outputStream.flush();
+                outputStream.close();
+            } catch (IOException e) {
+                System.out.println("Error: IO Exception occured during registration process");
+                e.printStackTrace();
+            }
+        } catch (UnsupportedEncodingException e) {
+            System.out.println("Error: Unsupported Encoding occured during registration process");
+            e.printStackTrace();
+        }
     }
 }
