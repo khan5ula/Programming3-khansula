@@ -31,9 +31,7 @@ public class RegistrationHandler implements HttpHandler {
         JSONObject usertoJSON;
 
         /* Check if the request is POST */
-        if (code == 0) {
-            code = checkRequestForPost(exchangeObject);
-        }
+        code = checkRequestForPost(exchangeObject);
 
         /* Check if the header has a content type */
         if (code == 0) {
@@ -51,7 +49,7 @@ public class RegistrationHandler implements HttpHandler {
                 InputStream inputStream = exchangeObject.getRequestBody();
                 newUser = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8)).lines().collect(Collectors.joining("\n"));
                 inputStream.close();
-                System.out.println("Success: User information data extracted successfully");
+                System.out.println("Success: User information data received");
             } catch (Exception e) {
                 System.out.println("Error: Exception occured while processing input stream");
             }
@@ -64,7 +62,7 @@ public class RegistrationHandler implements HttpHandler {
                     usertoJSON = new JSONObject(newUser);
                     code = checkUserContent(usertoJSON);
                     if (code == 200) {
-                        if (userAuthenticator.addUser(usertoJSON.getString("nickname"), usertoJSON.getString("password"), usertoJSON.getString("email"))) {
+                        if (userAuthenticator.addUser(usertoJSON.getString("username"), usertoJSON.getString("password"), usertoJSON.getString("email"))) {
                             System.out.println("Success: RegistrationHandler added the new user successfully");
                         } else {
                             System.out.println("Error 409: User could not be added");
@@ -125,7 +123,7 @@ public class RegistrationHandler implements HttpHandler {
 
     /* Method that checks if the given JSON is valid */
     private int checkUserContent(JSONObject input) {
-        if (input.has("nickname") && input.getString("nickname").length() > 0) {
+        if (input.has("username") && input.getString("username").length() > 0) {
             if (input.has("password") && input.getString("password").length() > 0) {
                 if (input.has("email") && input.getString(("email")).length() > 0) {
                     System.out.println("Success: The given JSON is valid");
@@ -150,7 +148,7 @@ public class RegistrationHandler implements HttpHandler {
                 responseBuilder.append("Only Post requests accepted with registration service");
                 break;
             case 409:
-                responseBuilder.append("Conflict: The nickname is already taken");
+                responseBuilder.append("Conflict: The username is already taken");
                 break;
             case 411:
                 responseBuilder.append("Error: No content type provided");
@@ -176,6 +174,7 @@ public class RegistrationHandler implements HttpHandler {
         try {
             bytes = responseString.getBytes("UTF-8");
             try {
+                System.out.println("Status: Sending a response code: " + code);
                 exchangeObject.sendResponseHeaders(code, bytes.length);
                 OutputStream outputStream = exchangeObject.getResponseBody();
                 outputStream.write(bytes);

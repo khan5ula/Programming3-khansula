@@ -118,16 +118,16 @@ public class WarningHandler implements HttpHandler {
     private int checkContentIsValid(String content) {
         JSONObject contentToJSON = new JSONObject(content);
 
-            if (contentToJSON.has("nickname") && !contentToJSON.isNull("nickname")) {
-                if (contentToJSON.has("latitude") && !contentToJSON.isNull("latitude")) {
-                    if (contentToJSON.has("longitude") && !contentToJSON.isNull("longitude")) {
-                        if (contentToJSON.has("dangertype") && !contentToJSON.isNull("dangertype")) {
-                            System.out.println("Success: The content contains all required information");
-                            return 200;
-                        }
+        if (contentToJSON.has("nickname") && !contentToJSON.isNull("nickname")) {
+            if (contentToJSON.has("latitude") && !contentToJSON.isNull("latitude")) {
+                if (contentToJSON.has("longitude") && !contentToJSON.isNull("longitude")) {
+                    if (contentToJSON.has("dangertype") && !contentToJSON.isNull("dangertype")) {
+                        System.out.println("Success: The content contains all required information");
+                        return 200;
                     }
                 }
             }
+        }
 
         System.out.println("Error: The content does not have all required information");  
         return 413;
