@@ -6,10 +6,14 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
+import java.sql.SQLException;
+import java.time.DateTimeException;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.stream.Collectors;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import com.sun.net.httpserver.HttpExchange;
@@ -18,11 +22,11 @@ import com.sun.net.httpserver.HttpHandler;
 public class WarningHandler implements HttpHandler {
     StringBuilder inputStorage;
     StringBuilder errorStorage;
-    ArrayList<WarningMessage> warningList;
+    MessageDatabase messageDatabase;
 
     public WarningHandler() {
         inputStorage = new StringBuilder("");
-        warningList = new ArrayList<WarningMessage>();
+        messageDatabase = MessageDatabase.getInstance();
     }
 
     @Override
@@ -52,11 +56,21 @@ public class WarningHandler implements HttpHandler {
                 code = 412;
             }
 
-            /* If the warning is OK, add it to the list */
-            if (code == 0) {
-                if ((code = checkContentIsValid(content)) == 200) {
-                    contentToJSON = new JSONObject(content);
-                    warningList.add(new WarningMessage(contentToJSON.getString("nickname"), contentToJSON.getString("latitude"), contentToJSON.getString("longitude"), contentToJSON.getString("dangertype")));
+            /* Check the content validity and parse the timestamp, if OK, add to database */
+            if (code == 0)
+            if ((code = checkContentIsValid(content)) == 200) {
+                contentToJSON = new JSONObject(content);
+
+                try {
+                    /* Parse the timestamp content, will throw if invalid */
+                    OffsetDateTime offsetTime = OffsetDateTime.parse(contentToJSON.getString("sent"));
+                    LocalDateTime time = offsetTime.toLocalDateTime();  
+                    
+                    /* Add new message to the database */
+                    messageDatabase.setMessage(new WarningMessage(contentToJSON.getString("nickname"), contentToJSON.getDouble("latitude"), contentToJSON.getDouble("longitude"), contentToJSON.getString("dangertype"), time));
+                } catch (DateTimeException | JSONException | SQLException e) {
+                    code = 413;
+                    System.out.println("Error: Problem with message content: " + e.getMessage());
                 }
             }
 
@@ -65,41 +79,33 @@ public class WarningHandler implements HttpHandler {
             exchangeObject.sendResponseHeaders(code, -1);
             
         /* Handle GET case */
+        // TODO: Implement get from database
         } else if (exchangeObject.getRequestMethod().equalsIgnoreCase("GET")) {
             System.out.println("Status: Got into GET handler branch");
 
             /* Check if there are any stored error messages */
-            if (warningList.isEmpty()) {
-                code = 204;
-                exchangeObject.sendResponseHeaders(code, -1);
+            // TODO: Implement this checker
 
             /* Iterate through all stored messages */
-            } else {
-                code = 200;
-                JSONArray responseMessages = new JSONArray();
-                for (WarningMessage warningMessage : warningList) {
-                    responseMessages.put(convertWarningToJSON(warningMessage));
-                }
+            code = 200;
+            //JSONArray responseMessages = new JSONArray();
+            JSONObject responseObject;
 
+            try {
+                responseObject = messageDatabase.getMessages();
                 /* Send the response */
-                String responseString = responseMessages.toString();
-
-                try {
-                    bytes = responseString.getBytes("UTF-8");
-                    try {
-                        System.out.println("Status: Sending GET response");
-                        exchangeObject.sendResponseHeaders(code, bytes.length);
-                        OutputStream outputStream = exchangeObject.getResponseBody();
-                        outputStream.write(bytes);
-                        outputStream.flush();
-                        outputStream.close();
-                    } catch (IOException e) {
-                        System.out.println("Error: IO Exception occured during registration process");
-                        e.printStackTrace();
-                    }
-                } catch (Exception e) {
-                    System.out.println("Error: Something went wrong when sending the response");
-                }
+                //String responseString = responseMessages.toString();
+                String responseString = responseObject.toString();
+                
+                bytes = responseString.getBytes("UTF-8");
+                System.out.println("Status: Sending GET response");
+                exchangeObject.sendResponseHeaders(code, bytes.length);
+                OutputStream outputStream = exchangeObject.getResponseBody();
+                outputStream.write(bytes);
+                outputStream.flush();
+                outputStream.close();
+            } catch (Exception e) {
+                System.out.println("Error occured while getting messages: " + e.getMessage());
             }
 
         /* Only POST and GET are supported, in any other case send a general error */
@@ -122,8 +128,10 @@ public class WarningHandler implements HttpHandler {
             if (contentToJSON.has("latitude") && !contentToJSON.isNull("latitude")) {
                 if (contentToJSON.has("longitude") && !contentToJSON.isNull("longitude")) {
                     if (contentToJSON.has("dangertype") && !contentToJSON.isNull("dangertype")) {
-                        System.out.println("Success: The content contains all required information");
-                        return 200;
+                        if (contentToJSON.has("sent") && !contentToJSON.isNull(("sent"))) {
+                            System.out.println("Success: The content contains all required information");
+                            return 200;            
+                        }
                     }
                 }
             }
@@ -138,7 +146,7 @@ public class WarningHandler implements HttpHandler {
         StringBuilder body = new StringBuilder();
 
         body.append("{ \"nickname\":\"");
-        body.append(warningMessage.getNick());
+        body.append(warningMessage.getNickname());
         body.append("\", \"longitude\":\"");
         body.append(warningMessage.getLongitude());
         body.append("\", \"latitude\":\"");

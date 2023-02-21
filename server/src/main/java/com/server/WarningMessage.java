@@ -1,31 +1,45 @@
 package com.server;
 
-import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 
 public class WarningMessage {
-    private String nick;
-    private String latitude;
-    private String longitude;
+    private String nickname;
+    private double latitude;
+    private double longitude;
     private String dangertype;
-    ArrayList<WarningMessage> warningList;
+    private LocalDateTime sent;
 
-    public WarningMessage(String nick, String latitude, String longitude, String dangertype) {
-        this.nick = nick;
+    /*
+    * The default constructor requires parameters for all class variables
+    */
+    public WarningMessage(String nickname, double latitude, double longitude, String dangertype, LocalDateTime sent) {
+        /* Check all required parameters were received */
+        Object [] args = {nickname, latitude, longitude, dangertype, sent};
+        if (Collections.frequency(Arrays.asList(args), null) >= 1) {
+            throw new IllegalArgumentException("Error: Tried to give null parameter to new warning");
+        }
+
+        this.nickname = nickname;
         this.latitude = latitude;
         this.longitude = longitude;
         this.dangertype = dangertype;
-        warningList = new ArrayList<WarningMessage>();
+        this.sent = sent;
     }
 
-    public void setNick(String nick) {
-        this.nick = nick;
+    public void setNick(String nickname) {
+        this.nickname = nickname;
     }
 
-    public void setLatitude(String latitude) {
+    public void setLatitude(double latitude) {
         this.latitude = latitude;
     }
 
-    public void setLongitude(String longitude) {
+    public void setLongitude(double longitude) {
         this.longitude = longitude;
     }
 
@@ -33,20 +47,31 @@ public class WarningMessage {
         this.dangertype = dangerString;
     }
 
-    public String getNick() {
-        return this.nick;
+    public String getNickname() {
+        return this.nickname;
     }
 
-    public String getLatitude() {
+    public double getLatitude() {
         return this.latitude;
     }
 
-    public String getLongitude() {
+    public double getLongitude() {
         return this.longitude;
     }
 
     public String getDangertype() {
         return this.dangertype;
     }
-    
+
+    public long dateAsInt() {
+        return this.sent.toInstant(ZoneOffset.UTC).toEpochMilli();
+    }
+
+    public LocalDateTime getSent() {
+        return this.sent;
+    }
+
+    public static LocalDateTime setSent(long epoch) {
+        return LocalDateTime.ofInstant(Instant.ofEpochMilli(epoch), ZoneOffset.UTC);
+    }
 }

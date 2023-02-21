@@ -17,10 +17,10 @@ import com.sun.net.httpserver.HttpHandler;
 
 
 public class RegistrationHandler implements HttpHandler {
-    UserAuthenticator userAuthenticator;
+    MessageDatabase messageDatabase;
 
-    public RegistrationHandler(UserAuthenticator userAuthenticator) {
-        this.userAuthenticator = userAuthenticator;
+    public RegistrationHandler() {
+        messageDatabase = MessageDatabase.getInstance();
     }
 
     @Override
@@ -62,13 +62,13 @@ public class RegistrationHandler implements HttpHandler {
                     usertoJSON = new JSONObject(newUser);
                     code = checkUserContent(usertoJSON);
                     if (code == 200) {
-                        if (userAuthenticator.addUser(usertoJSON.getString("username"), usertoJSON.getString("password"), usertoJSON.getString("email"))) {
+                        if (messageDatabase.setUser(usertoJSON)) {
                             System.out.println("Success: RegistrationHandler added the new user successfully");
                         } else {
                             System.out.println("Error 409: User could not be added");
                             code = 409;
                         }
-                    }      
+                    }
                 } catch (Exception e) {
                     System.out.println("Error during JSON parsing");
                     e.getMessage();
@@ -91,7 +91,7 @@ public class RegistrationHandler implements HttpHandler {
     }
 
     /* Method that checks if the exchange header has a content type */
-    private int  checkContentTypeAvailability(Headers headers) {
+    private int checkContentTypeAvailability(Headers headers) {
         if (headers.containsKey("Content-Type")) {
             System.out.println("Success: Content-Type found from header");
             return 0;
