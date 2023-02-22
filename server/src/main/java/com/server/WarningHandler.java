@@ -16,16 +16,16 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import com.sun.net.httpserver.Headers;
+import com.sun.net.httpserver.HttpContext;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 
 public class WarningHandler implements HttpHandler {
-    StringBuilder inputStorage;
-    StringBuilder errorStorage;
-    MessageDatabase messageDatabase;
+    private StringBuilder errorStorage;
+    private MessageDatabase messageDatabase;
 
     public WarningHandler() {
-        inputStorage = new StringBuilder("");
         messageDatabase = MessageDatabase.getInstance();
     }
 
@@ -79,24 +79,25 @@ public class WarningHandler implements HttpHandler {
             exchangeObject.sendResponseHeaders(code, -1);
             
         /* Handle GET case */
-        // TODO: Implement get from database
         } else if (exchangeObject.getRequestMethod().equalsIgnoreCase("GET")) {
-            System.out.println("Status: Got into GET handler branch");
-
-            /* Check if there are any stored error messages */
-            // TODO: Implement this checker
-
-            /* Iterate through all stored messages */
-            code = 200;
-            //JSONArray responseMessages = new JSONArray();
-            JSONObject responseObject;
-
             try {
-                responseObject = messageDatabase.getMessages();
+                JSONObject responseObject;
+                JSONArray responseArray;
+                String responseString;
+
+                int messageCount = messageDatabase.messageChecker();
+                if (messageCount < 0) {
+                    responseString = "No messages";
+                } else if (messageCount == 0) {
+                    responseObject = messageDatabase.getMessage();
+                    responseString = responseObject.toString();
+                } else {
+                    responseArray = messageDatabase.getMessages();
+                    responseString = responseArray.toString();
+                }
+
                 /* Send the response */
-                //String responseString = responseMessages.toString();
-                String responseString = responseObject.toString();
-                
+                code = 200;
                 bytes = responseString.getBytes("UTF-8");
                 System.out.println("Status: Sending GET response");
                 exchangeObject.sendResponseHeaders(code, bytes.length);
@@ -115,6 +116,7 @@ public class WarningHandler implements HttpHandler {
             exchangeObject.sendResponseHeaders(400, bytes.length);
             OutputStream outputStream = exchangeObject.getResponseBody();
             outputStream.write(bytes);
+
             /* Job done, clean the output stream */
             outputStream.flush();
             outputStream.close();
@@ -139,23 +141,5 @@ public class WarningHandler implements HttpHandler {
 
         System.out.println("Error: The content does not have all required information");  
         return 413;
-    }
-
-    /* Convert a WarninMessage to JSON Object */
-    private JSONObject convertWarningToJSON(WarningMessage warningMessage) {
-        StringBuilder body = new StringBuilder();
-
-        body.append("{ \"nickname\":\"");
-        body.append(warningMessage.getNickname());
-        body.append("\", \"longitude\":\"");
-        body.append(warningMessage.getLongitude());
-        body.append("\", \"latitude\":\"");
-        body.append(warningMessage.getLatitude());
-        body.append("\", \"dangertype\":\"");
-        body.append(warningMessage.getDangertype());
-        body.append("\" }");
-
-        JSONObject warning = new JSONObject(body.toString());
-        return warning;
     }
 }

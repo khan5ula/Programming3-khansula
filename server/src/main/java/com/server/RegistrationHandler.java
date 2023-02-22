@@ -17,10 +17,12 @@ import com.sun.net.httpserver.HttpHandler;
 
 
 public class RegistrationHandler implements HttpHandler {
-    MessageDatabase messageDatabase;
+    private MessageDatabase messageDatabase;
+    private UserAuthenticator userAuthenticator;
 
-    public RegistrationHandler() {
+    public RegistrationHandler(UserAuthenticator userAuthenticator) {
         messageDatabase = MessageDatabase.getInstance();
+        this.userAuthenticator = userAuthenticator;
     }
 
     @Override
@@ -78,6 +80,7 @@ public class RegistrationHandler implements HttpHandler {
 
         /* We've got a response code. Let's send it. Godspeed. */
         sendResponse(code, exchangeObject);
+        System.out.println("The response code is: " + code);
     }
 
     /* Method that checks if the exchange object contains POST request */

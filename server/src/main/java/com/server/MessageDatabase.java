@@ -7,6 +7,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 public class MessageDatabase {
@@ -45,18 +46,16 @@ public class MessageDatabase {
 
     /* Method for the server, opens a database connection with a DB of given path */
     public void open(String dbName) throws SQLException {
-        System.out.println("Status: Trying to open the database");
+        System.out.println("Trying to open the database");
         boolean exists = false;
         File file = new File(dbName);
-        File parentDir = file.getParentFile();
+        System.out.println("Checking the given file: " + file.toString());
 
-        /* Check if the received database path is a file and it resides in a directory */
-        if (parentDir != null) {
-            if (parentDir.isDirectory()) {
-                if (file.isFile()) {
-                    System.out.println("Received database path and file recognized");
-                    exists = true;
-                }
+        if (!file.isDirectory()) {
+            System.out.println(file.toString() + " is not a directory");
+            if (file.isFile()) {
+                System.out.println(file.toString() + " is a file");
+                exists = true;
             }
         }
 
@@ -67,9 +66,9 @@ public class MessageDatabase {
             System.out.println("Error while estabilishing dbConnection: " + e.getMessage());
         }
 
-
+        // If the given file was not found, initialize a new database
         if (!exists) {
-            System.out.println("The given database was not found, initializing a new one");
+            System.out.println("Database was not found, initializing a new one");
             initialize();
         }
     }
@@ -136,6 +135,8 @@ public class MessageDatabase {
         StringBuilder temp = new StringBuilder("insert into messages ");
 
         temp.append("VALUES('");
+        temp.append(message.dateAsInt());
+        temp.append("','");
         temp.append(message.getNickname());
         temp.append("','");
         temp.append(message.getLatitude());
@@ -143,8 +144,6 @@ public class MessageDatabase {
         temp.append(message.getLongitude());
         temp.append("','");
         temp.append(message.getDangertype());
-        temp.append("','");
-        temp.append(message.dateAsInt());
         temp.append("')");
 
         String setMessageString = temp.toString();
@@ -154,13 +153,55 @@ public class MessageDatabase {
         createStatement.close();
     }
 
-    /* Method for extracting all messages from database */
-    public JSONObject getMessages() throws SQLException {
+    /*  Method that checks if there are messages in the database
+        If there are none, return -1
+        If there is only one, return 0
+        If there are several, return 1
+    */
+    public int messageChecker() throws SQLException {
+        int count = -1;
         Statement queryStatement = this.dbConnection.createStatement();
-        JSONObject jsonObject = new JSONObject();
-        ResultSet result = queryStatement.executeQuery("select nickname, latitude, longitude, dangertype, sent from messages");
+        ResultSet result = queryStatement.executeQuery("SELECT * FROM messages ORDER BY rowid");
 
-        // tässä kaatuu
+        while (result.next()) {
+            count++;
+            if (count > 1) {
+                break;
+            }
+        }
+
+        return count;
+    }
+
+    /* Method for getting several messages from the database */
+    public JSONArray getMessages() throws SQLException {
+        JSONObject jsonObject = new JSONObject();
+        JSONArray jsonArray = new JSONArray();
+
+        Statement queryStatement = this.dbConnection.createStatement();
+        ResultSet result = queryStatement.executeQuery("SELECT * FROM messages ORDER BY rowid");
+        WarningMessage msg = new WarningMessage(result.getString("nickname"), result.getDouble("latitude"), result.getDouble("longitude"), result.getString("dangertype"), WarningMessage.setSent(result.getLong("sent")));
+
+        while (result.next()) {
+            jsonObject.put("sent", msg.getSent());
+            jsonObject.put("nickname", msg.getNickname());
+            jsonObject.put("latitude", msg.getLatitude());
+            jsonObject.put("longitude", msg.getLongitude());
+            jsonObject.put("dangertype", msg.getDangertype());
+            jsonArray.put(jsonObject);
+            jsonObject = new JSONObject();
+        }
+
+        return jsonArray;
+
+    }
+
+    /* Method for getting the only message from the database */
+    public JSONObject getMessage() throws SQLException {
+        JSONObject jsonObject = new JSONObject();
+    
+        Statement queryStatement = this.dbConnection.createStatement();
+        ResultSet result = queryStatement.executeQuery("SELECT * FROM messages ORDER BY rowid");
         WarningMessage msg = new WarningMessage(result.getString("nickname"), result.getDouble("latitude"), result.getDouble("longitude"), result.getString("dangertype"), WarningMessage.setSent(result.getLong("sent")));
 
         while (result.next()) {

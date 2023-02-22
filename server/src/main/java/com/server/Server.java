@@ -16,6 +16,7 @@ import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpContext;
 import com.sun.net.httpserver.HttpsParameters;
 
+
 public class Server {
     StringBuilder textStorage = new StringBuilder("");
 
@@ -43,33 +44,35 @@ public class Server {
 
     public static void main(String[] args) throws Exception {
         try {
+            // Create a database instance
             MessageDatabase messageDatabase = MessageDatabase.getInstance();
-            messageDatabase.open("Messages.db");
+            messageDatabase.open("messages.db");
 
             //create the http server to port 8001 with default logger
             HttpsServer server = HttpsServer.create(new InetSocketAddress(8001),0);
-
             // use self-signed SSL sertificate
             SSLContext sslContext = serverSSLContext();
-
             // configuring the HttpsServer to use the sslContext
             server.setHttpsConfigurator(new HttpsConfigurator(sslContext) {
                 public void configure (HttpsParameters params) {
-                    //InetSocketAddress remote = params.getClientAddress();
                     SSLContext c = getSSLContext();
                     SSLParameters sslparams = c.getDefaultSSLParameters();
                     params.setSSLParameters(sslparams);
             }   
             });
 
-            //create context that defines path for the resource, in this case a "help"
-            HttpContext httpContext = server.createContext("/warning", new WarningHandler());
-            httpContext.setAuthenticator(null);
+            // Create User Authenticator instance
+            UserAuthenticator userAuthenticator = new UserAuthenticator();
 
-            // create a context for registration
-            server.createContext("/registration", new RegistrationHandler());
+            // Create context for warnings
+            HttpContext httpContext = server.createContext("/warning", new WarningHandler());
+            httpContext.setAuthenticator(userAuthenticator);
+
+            // Create context for registration
+            server.createContext("/registration", new RegistrationHandler(userAuthenticator));
+
             server.setExecutor(null); 
-            server.start();
+            server.start();        
         } catch (FileNotFoundException e) {
             System.out.println("Error: Certificate not found");
         } catch (Exception e) {
