@@ -44,15 +44,16 @@ public class Server {
 
     public static void main(String[] args) throws Exception {
         try {
-            // Create a database instance
+            /* Create a database instance */
             MessageDatabase messageDatabase = MessageDatabase.getInstance();
-            messageDatabase.open("messages.db");
 
-            //create the http server to port 8001 with default logger
+            /* Create HTTP server to port 8001 with default logger */
             HttpsServer server = HttpsServer.create(new InetSocketAddress(8001),0);
-            // use self-signed SSL sertificate
+
+            /* Use self-signed SSL certificate */
             SSLContext sslContext = serverSSLContext();
-            // configuring the HttpsServer to use the sslContext
+
+            /* Configure HttpsServer to use sslContext */
             server.setHttpsConfigurator(new HttpsConfigurator(sslContext) {
                 public void configure (HttpsParameters params) {
                     SSLContext c = getSSLContext();
@@ -61,18 +62,28 @@ public class Server {
             }   
             });
 
-            // Create User Authenticator instance
+            /* Create User Authenticator instance */
             UserAuthenticator userAuthenticator = new UserAuthenticator();
 
-            // Create context for warnings
+            /* Create context for warnings */
             HttpContext httpContext = server.createContext("/warning", new WarningHandler());
             httpContext.setAuthenticator(userAuthenticator);
 
-            // Create context for registration
-            server.createContext("/registration", new RegistrationHandler(userAuthenticator));
+            /* Create context for registration */
+            server.createContext("/registration", new RegistrationHandler());
 
+            /* Start the server */
             server.setExecutor(null); 
-            server.start();        
+            server.start();
+
+            /* Initialize database connection */
+            try {
+                messageDatabase.open("messages.db");
+            } catch (Exception e) {
+                System.out.println("Error occured while the server tried to open a database connection: " + e.getMessage());
+            } finally {
+                messageDatabase.closeDB();
+            }
         } catch (FileNotFoundException e) {
             System.out.println("Error: Certificate not found");
         } catch (Exception e) {

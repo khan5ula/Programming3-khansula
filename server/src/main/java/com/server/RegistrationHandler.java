@@ -18,11 +18,9 @@ import com.sun.net.httpserver.HttpHandler;
 
 public class RegistrationHandler implements HttpHandler {
     private MessageDatabase messageDatabase;
-    private UserAuthenticator userAuthenticator;
 
-    public RegistrationHandler(UserAuthenticator userAuthenticator) {
+    public RegistrationHandler() {
         messageDatabase = MessageDatabase.getInstance();
-        this.userAuthenticator = userAuthenticator;
     }
 
     @Override

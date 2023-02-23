@@ -112,6 +112,7 @@ public class WarningHandler implements HttpHandler {
         }
     }
 
+    /* Method that iterates through received content and checks if it contains all required information */
     private int checkContentIsValid(String content) {
         JSONObject contentToJSON = new JSONObject(content);
 

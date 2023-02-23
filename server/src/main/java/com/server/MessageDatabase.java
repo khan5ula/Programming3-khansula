@@ -6,10 +6,12 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.time.ZoneOffset;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+/* Class that wraps all relevant database methods */
 public class MessageDatabase {
     private Connection dbConnection = null;
     private static MessageDatabase dbInstance = null;
@@ -51,6 +53,7 @@ public class MessageDatabase {
         File file = new File(dbName);
         System.out.println("Status: Checking the given database file: " + file.toString());
 
+        /* Check if the given file can be found. Also make sure that it is not a directory */
         if (!file.isDirectory()) {
             System.out.println("Status: " + file.toString() + " is not a directory, good");
             if (file.isFile()) {
@@ -66,7 +69,7 @@ public class MessageDatabase {
             System.out.println("Error while estabilishing dbConnection: " + e.getMessage());
         }
 
-        // If the given file was not found, initialize a new database
+        /* If the given file could not be found, initialize a new database using that name */
         if (!exists) {
             System.out.println("Status: Database was not found, initializing a new one");
             initialize();
@@ -91,7 +94,7 @@ public class MessageDatabase {
             createStatement.executeUpdate(createPrompt);
             createStatement.close();
 
-            System.out.println("Status: Message table initialized succesfully");
+            System.out.println("Success: Message table initialized");
         } catch (SQLException e) {
             System.out.println("SQLException occured while creating message table: " + e.getMessage());
         } catch (Exception e) {
@@ -113,7 +116,7 @@ public class MessageDatabase {
             createStatement.executeUpdate(createPrompt);
             createStatement.close();
 
-            System.out.println("Status: User table initialized succesfully");
+            System.out.println("Success: User table initialized");
         } catch (SQLException e) {
             System.out.println("SQLException occured while creating user table: " + e.getMessage());
         } catch (Exception e) {
@@ -155,7 +158,9 @@ public class MessageDatabase {
         createStatement.close();
     }
 
-
+    /*  Method that checks if there are any messages in the database,
+        breaks the loop after 1 message instance has been found
+     */
     public int checkIfThereAreMessages() throws SQLException {
         int count = 0;
         Statement queryStatement = this.dbConnection.createStatement();
@@ -181,10 +186,10 @@ public class MessageDatabase {
         if (checkIfThereAreMessages() > 0) {
             Statement queryStatement = this.dbConnection.createStatement();
             ResultSet result = queryStatement.executeQuery("SELECT * FROM messages ORDER BY rowid");
-            WarningMessage msg = new WarningMessage(result.getString("nickname"), result.getDouble("latitude"), result.getDouble("longitude"), result.getString("dangertype"), WarningMessage.setSent(result.getLong("sent")));
     
             while (result.next()) {
-                jsonObject.put("sent", msg.getSent());
+                WarningMessage msg = new WarningMessage(result.getString("nickname"), result.getDouble("latitude"), result.getDouble("longitude"), result.getString("dangertype"), WarningMessage.setSent(result.getLong("sent")));
+                jsonObject.put("sent", msg.getSent(ZoneOffset.UTC));
                 jsonObject.put("nickname", msg.getNickname());
                 jsonObject.put("latitude", msg.getLatitude());
                 jsonObject.put("longitude", msg.getLongitude());
@@ -198,6 +203,7 @@ public class MessageDatabase {
         return jsonArray;
     }
 
+    /* Method that puts a new user to database */
     public boolean setUser(JSONObject user) throws SQLException {
         System.out.println("Status: Setting new user to database");
 
@@ -236,6 +242,7 @@ public class MessageDatabase {
         return false;
     }
 
+    /* Method that checks if given username is in the database */
     private boolean checkIfUserExists(String givenUsername) throws SQLException {
         System.out.println("Status: Checking from database if given username exists");
 
@@ -260,6 +267,7 @@ public class MessageDatabase {
         return false;
     }
 
+    /* Method that checks if the given username/password combination can be found from database */
     public boolean authenticateUser(String givenUserName, String givenPassword) throws SQLException {
         System.out.println("Status: Authenticating user from database");
 
@@ -276,10 +284,11 @@ public class MessageDatabase {
             return false;
         } else {
             String passw = result.getString("password");
-            
             if (passw.equals(givenPassword)) {
+                System.out.println("Status: User credentials are correct");
                 return true;
             } else {
+                System.out.println("Status: User credentials are incorrect");
                 return false;
             }
         }

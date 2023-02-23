@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 
 public class WarningMessage {
     private String nickname;
@@ -66,8 +67,8 @@ public class WarningMessage {
         return this.sent.toInstant(ZoneOffset.UTC).toEpochMilli();
     }
 
-    public LocalDateTime getSent() {
-        return this.sent;
+    public ZonedDateTime getSent(ZoneOffset zone) {
+        return this.sent.atZone(zone);
     }
 
     public static LocalDateTime setSent(long epoch) {
