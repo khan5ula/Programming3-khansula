@@ -16,8 +16,6 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import com.sun.net.httpserver.Headers;
-import com.sun.net.httpserver.HttpContext;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 
@@ -38,7 +36,7 @@ public class WarningHandler implements HttpHandler {
 
         /* Handle POST case */
         if (exchangeObject.getRequestMethod().equalsIgnoreCase("POST")) {
-            System.out.println("Got into POST handler branch");
+            System.out.println("Status: Got into POST handler branch");
             InputStream inputStream = exchangeObject.getRequestBody();
 
             /* Parse content */
@@ -81,20 +79,11 @@ public class WarningHandler implements HttpHandler {
         /* Handle GET case */
         } else if (exchangeObject.getRequestMethod().equalsIgnoreCase("GET")) {
             try {
-                JSONObject responseObject;
                 JSONArray responseArray;
                 String responseString;
 
-                int messageCount = messageDatabase.messageChecker();
-                if (messageCount < 0) {
-                    responseString = "No messages";
-                } else if (messageCount == 0) {
-                    responseObject = messageDatabase.getMessage();
-                    responseString = responseObject.toString();
-                } else {
-                    responseArray = messageDatabase.getMessages();
-                    responseString = responseArray.toString();
-                }
+                responseArray = messageDatabase.getMessages();
+                responseString = responseArray.toString();
 
                 /* Send the response */
                 code = 200;
