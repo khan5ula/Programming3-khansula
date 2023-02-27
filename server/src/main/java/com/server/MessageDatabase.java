@@ -7,6 +7,11 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.ZoneOffset;
+import java.util.Base64;
+import java.util.concurrent.Executors;
+
+import java.security.SecureRandom;
+import org.apache.commons.codec.digest.Crypt;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -15,6 +20,7 @@ import org.json.JSONObject;
 public class MessageDatabase {
     private Connection dbConnection = null;
     private static MessageDatabase dbInstance = null;
+    private SecureRandom secureRandom = null;
 
     /* Public getter for Singleton implementation */
     public static synchronized MessageDatabase getInstance() {
@@ -40,6 +46,7 @@ public class MessageDatabase {
         if (this.dbConnection != null) {
             createMessageTable();
             createUserTable();
+            this.secureRandom = new SecureRandom();
             return true;
         }
 
@@ -217,12 +224,20 @@ public class MessageDatabase {
             return false;
         }
 
+        /* Hash the password with salt */
+        byte bytes[] = new byte[13];
+        this.secureRandom.nextBytes(bytes);
+        String saltBytes = new String(Base64.getEncoder().encode(bytes));
+        String salt = "$6$" + saltBytes;
+        String hashedPassword = Crypt.crypt(user.getString("password"), salt);
+        
+
         try {
             StringBuilder temp = new StringBuilder("insert into users ");
             temp.append("VALUES('");
             temp.append(user.getString("username"));
             temp.append("','");
-            temp.append(user.getString("password"));
+            temp.append(hashedPassword);
             temp.append("','");
             temp.append(user.getString("email"));
             temp.append("')");
@@ -283,8 +298,10 @@ public class MessageDatabase {
             System.out.println("Error: Could not find given username");
             return false;
         } else {
-            String passw = result.getString("password");
-            if (passw.equals(givenPassword)) {
+            /* Fetch the hashed password from database */
+            String hashedPassword = result.getString("password");
+            /* Check if the given plaintext password matches with the hashed one */
+            if (hashedPassword.equals(Crypt.crypt(givenPassword, hashedPassword))) {
                 System.out.println("Status: User credentials are correct");
                 return true;
             } else {

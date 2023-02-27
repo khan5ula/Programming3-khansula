@@ -71,6 +71,7 @@ public class RegistrationHandler implements HttpHandler {
                     }
                 } catch (Exception e) {
                     System.out.println("Error during JSON parsing");
+                    code = 500;
                     e.getMessage();
                 }  
             }
@@ -164,9 +165,9 @@ public class RegistrationHandler implements HttpHandler {
                 responseBuilder.append("Error: Requested content type is not supported");
                 break;
             default:
-                System.out.println("Error: Cannot send response without status code");
-                responseBuilder.append("The system logic failed miserably");
-                code = 400;
+                System.out.println("Error: Registration was not succesful");
+                responseBuilder.append("The server faced an error while processing the request");
+                code = 500;
         }
 
         String responseString = responseBuilder.toString();
