@@ -34,6 +34,8 @@ public class WarningHandler implements HttpHandler {
         int code = 0;
         byte [] bytes = null;
 
+        System.out.println("Status: Request handled in thread " + Thread.currentThread().getId());
+
         /* Handle POST case */
         if (exchangeObject.getRequestMethod().equalsIgnoreCase("POST")) {
             System.out.println("Status: Got into POST handler branch");

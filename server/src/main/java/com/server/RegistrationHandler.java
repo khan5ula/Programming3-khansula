@@ -30,6 +30,8 @@ public class RegistrationHandler implements HttpHandler {
         int code = 0;
         JSONObject usertoJSON;
 
+        System.out.println("Status: Request handled in thread " + Thread.currentThread().getId());
+
         /* Check if the request is POST */
         code = checkRequestForPost(exchangeObject);
 

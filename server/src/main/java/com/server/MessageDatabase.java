@@ -8,7 +8,6 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.ZoneOffset;
 import java.util.Base64;
-import java.util.concurrent.Executors;
 
 import java.security.SecureRandom;
 import org.apache.commons.codec.digest.Crypt;

@@ -16,6 +16,8 @@ import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpContext;
 import com.sun.net.httpserver.HttpsParameters;
 
+import java.util.concurrent.Executors;
+
 
 public class Server {
     StringBuilder textStorage = new StringBuilder("");
@@ -65,15 +67,13 @@ public class Server {
             /* Create User Authenticator instance */
             UserAuthenticator userAuthenticator = new UserAuthenticator();
 
-            /* Create context for warnings */
+            /* Create context for warning and registration services*/
             HttpContext httpContext = server.createContext("/warning", new WarningHandler());
             httpContext.setAuthenticator(userAuthenticator);
-
-            /* Create context for registration */
             server.createContext("/registration", new RegistrationHandler());
 
-            /* Start the server */
-            server.setExecutor(null); 
+            /* Enable support for multi-threading and start the server */
+            server.setExecutor(Executors.newCachedThreadPool()); 
             server.start();
 
             /* Initialize database connection */
