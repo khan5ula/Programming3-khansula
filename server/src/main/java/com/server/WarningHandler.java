@@ -19,34 +19,44 @@ import org.json.JSONObject;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 
+/**
+ * HttpHandler class that handles GET and POST requests.
+ * HttpHandler object can receive JSON messages 
+ * and store them into a database, it can also 
+ * retrieve messages from the database and
+ * send them to the client as a JSONArray
+ */
 public class WarningHandler implements HttpHandler {
-    private StringBuilder errorStorage;
-    private MessageDatabase messageDatabase;
-
     public WarningHandler() {
-        messageDatabase = MessageDatabase.getInstance();
+        /* Empty default constructor */
     }
 
+    /**
+     * Handle method for the custom HttpHandler class.
+     * Designed to handle GET and POST requests regarding WarningMessages.
+     * @param exchangeObject: Received from the client.
+     */
     @Override
-    public void handle(HttpExchange exchangeObject) throws IOException {
+    public void handle(final HttpExchange exchangeObject) throws IOException {
         String content = "";
         JSONObject contentToJSON;
         int code = 0;
         byte [] bytes = null;
+        final MessageDatabase messageDatabase = MessageDatabase.getInstance();
 
         System.out.println("Status: Request handled in thread " + Thread.currentThread().getId());
 
         /* Handle POST case */
         if (exchangeObject.getRequestMethod().equalsIgnoreCase("POST")) {
             System.out.println("Status: Got into POST handler branch");
-            InputStream inputStream = exchangeObject.getRequestBody();
+            final InputStream inputStream = exchangeObject.getRequestBody();
 
             /* Parse content */
             try {
                 content = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8)).lines().collect(Collectors.joining("\n"));
                 inputStream.close();
                 System.out.println("Success: Warning message received");          
-            } catch (Exception e) {
+            } catch (final Exception e) {
                 System.out.println("Error: Exception occured while processing input stream");
             }
 
@@ -63,11 +73,15 @@ public class WarningHandler implements HttpHandler {
 
                 try {
                     /* Parse the timestamp content, will throw if invalid */
-                    OffsetDateTime offsetTime = OffsetDateTime.parse(contentToJSON.getString("sent"));
-                    LocalDateTime time = offsetTime.toLocalDateTime();  
+                    final OffsetDateTime offsetTime = OffsetDateTime.parse(contentToJSON.getString("sent"));
+                    final LocalDateTime time = offsetTime.toLocalDateTime();  
                     
-                    /* Add new message to the database */
-                    messageDatabase.setMessage(new WarningMessage(contentToJSON.getString("nickname"), contentToJSON.getDouble("latitude"), contentToJSON.getDouble("longitude"), contentToJSON.getString("dangertype"), time));
+                    /* Add new message to the database, use a correct constructor depending on the received parameters */
+                    if (checkJsonForAreaAndPhone(contentToJSON)) {
+                        messageDatabase.setMessage(new WarningMessage(contentToJSON.getString("nickname"), contentToJSON.getDouble("latitude"), contentToJSON.getDouble("longitude"), contentToJSON.getString("dangertype"), time, contentToJSON.getString("areacode"), contentToJSON.getString("phonenumber")));
+                    } else {
+                        messageDatabase.setMessage(new WarningMessage(contentToJSON.getString("nickname"), contentToJSON.getDouble("latitude"), contentToJSON.getDouble("longitude"), contentToJSON.getString("dangertype"), time));
+                    }
                 } catch (DateTimeException | JSONException | SQLException e) {
                     code = 413;
                     System.out.println("Error: Problem with message content: " + e.getMessage());
@@ -83,7 +97,6 @@ public class WarningHandler implements HttpHandler {
             try {
                 JSONArray responseArray;
                 String responseString;
-
                 responseArray = messageDatabase.getMessages();
                 responseString = responseArray.toString();
 
@@ -92,31 +105,36 @@ public class WarningHandler implements HttpHandler {
                 bytes = responseString.getBytes("UTF-8");
                 System.out.println("Status: Sending GET response");
                 exchangeObject.sendResponseHeaders(code, bytes.length);
-                OutputStream outputStream = exchangeObject.getResponseBody();
+                final OutputStream outputStream = exchangeObject.getResponseBody();
                 outputStream.write(bytes);
                 outputStream.flush();
                 outputStream.close();
-            } catch (Exception e) {
+            } catch (final Exception e) {
                 System.out.println("Error occured while getting messages: " + e.getMessage());
             }
 
         /* Only POST and GET are supported, in any other case send a general error */
         } else {
-            String responseString = errorStorage.append("Error: Requested function is not supported").toString();
+            final String responseString = "Error: Requested function is not supported";
             bytes = responseString.getBytes("UTF-8");
             exchangeObject.sendResponseHeaders(400, bytes.length);
-            OutputStream outputStream = exchangeObject.getResponseBody();
+            final OutputStream outputStream = exchangeObject.getResponseBody();
             outputStream.write(bytes);
 
-            /* Job done, clean the output stream */
+            /* Done, clean the output stream */
             outputStream.flush();
             outputStream.close();
         }
     }
 
-    /* Method that iterates through received content and checks if it contains all required information */
-    private int checkContentIsValid(String content) {
-        JSONObject contentToJSON = new JSONObject(content);
+    /**
+     * Method that iterates through received content 
+     * and checks if it contains all required information 
+     * @param content String extracted from the client with InputStream
+     * @return 200 if all fields are OK, if not, return 413
+     */
+    private int checkContentIsValid(final String content) {
+        final JSONObject contentToJSON = new JSONObject(content);
 
         if (contentToJSON.has("nickname") && !contentToJSON.isNull("nickname")) {
             if (contentToJSON.has("latitude") && !contentToJSON.isNull("latitude")) {
@@ -134,4 +152,20 @@ public class WarningHandler implements HttpHandler {
         System.out.println("Error: The content does not have all required information");  
         return 413;
     }
+
+    /**
+     * Method that checks if the JSONObject has fields: areacode and phonenumber
+     * @param content JSONObject that contains the information for WarningMessage
+     * @return true if content has areacode and phonenumber, false otherwise
+     */
+    private boolean checkJsonForAreaAndPhone(final JSONObject content) {
+        System.out.println("Status: Checking if the WarningMessage has area code and phone number");
+        if (content.has("areacode")) {
+            if (content.has("phonenumber")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
 }

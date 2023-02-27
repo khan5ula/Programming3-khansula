@@ -1,6 +1,7 @@
 package com.server;
 
 import java.io.File;
+import java.security.SecureRandom;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -9,9 +10,7 @@ import java.sql.Statement;
 import java.time.ZoneOffset;
 import java.util.Base64;
 
-import java.security.SecureRandom;
 import org.apache.commons.codec.digest.Crypt;
-
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -93,7 +92,9 @@ public class MessageDatabase {
             "nickname VARCHAR (50) NOT NULL," +
             "latitude DOUBLE NOT NULL," +
             "longitude DOUBLE NOT NULL," +
-            "dangertype VARCHAR(255)," +
+            "dangertype VARCHAR(255) NOT NULL," +
+            "areacode INT," +
+            "phonenumber VARCHAR (50)," +
             "PRIMARY KEY (sent, nickname))";
 
             Statement createStatement = this.dbConnection.createStatement();
@@ -155,6 +156,10 @@ public class MessageDatabase {
         temp.append(message.getLongitude());
         temp.append("','");
         temp.append(message.getDangertype());
+        temp.append("','");
+        temp.append(message.getAreacode());
+        temp.append("','");
+        temp.append(message.getPhonenumber());
         temp.append("')");
 
         String setMessageString = temp.toString();
@@ -194,12 +199,24 @@ public class MessageDatabase {
             ResultSet result = queryStatement.executeQuery("SELECT * FROM messages ORDER BY rowid");
     
             while (result.next()) {
-                WarningMessage msg = new WarningMessage(result.getString("nickname"), result.getDouble("latitude"), result.getDouble("longitude"), result.getString("dangertype"), WarningMessage.setSent(result.getLong("sent")));
-                jsonObject.put("sent", msg.getSent(ZoneOffset.UTC));
-                jsonObject.put("nickname", msg.getNickname());
-                jsonObject.put("latitude", msg.getLatitude());
-                jsonObject.put("longitude", msg.getLongitude());
-                jsonObject.put("dangertype", msg.getDangertype());
+                if (result.getInt("areacode") > 0 && result.getString("phonenumber") != null) {
+                    WarningMessage msg = new WarningMessage(result.getString("nickname"), result.getDouble("latitude"), result.getDouble("longitude"), result.getString("dangertype"), WarningMessage.setSent(result.getLong("sent")), result.getString("areacode"), result.getString("phonenumber"));
+                    jsonObject.put("sent", msg.getSent(ZoneOffset.UTC));
+                    jsonObject.put("nickname", msg.getNickname());
+                    jsonObject.put("latitude", msg.getLatitude());
+                    jsonObject.put("longitude", msg.getLongitude());
+                    jsonObject.put("dangertype", msg.getDangertype());
+                    jsonObject.put("areacode", msg.getAreacode());
+                    jsonObject.put("phonenumber", msg.getPhonenumber());
+                } else {
+                    WarningMessage msg = new WarningMessage(result.getString("nickname"), result.getDouble("latitude"), result.getDouble("longitude"), result.getString("dangertype"), WarningMessage.setSent(result.getLong("sent")));
+                    jsonObject.put("sent", msg.getSent(ZoneOffset.UTC));
+                    jsonObject.put("nickname", msg.getNickname());
+                    jsonObject.put("latitude", msg.getLatitude());
+                    jsonObject.put("longitude", msg.getLongitude());
+                    jsonObject.put("dangertype", msg.getDangertype());
+                }
+
                 jsonArray.put(jsonObject);
                 // Initialize empty object for next round
                 jsonObject = new JSONObject();
@@ -210,7 +227,7 @@ public class MessageDatabase {
     }
 
     /* Method that puts a new user to database */
-    public boolean setUser(JSONObject user) throws SQLException {
+    public synchronized boolean setUser(JSONObject user) throws SQLException {
         System.out.println("Status: Setting new user to database");
 
         if (checkIfUserExists(user.getString("username"))) {
@@ -257,7 +274,7 @@ public class MessageDatabase {
     }
 
     /* Method that checks if given username is in the database */
-    private boolean checkIfUserExists(String givenUsername) throws SQLException {
+    private synchronized boolean checkIfUserExists(String givenUsername) throws SQLException {
         System.out.println("Status: Checking from database if given username exists");
 
         Statement queryStatement = null;
@@ -282,7 +299,7 @@ public class MessageDatabase {
     }
 
     /* Method that checks if the given username/password combination can be found from database */
-    public boolean authenticateUser(String givenUserName, String givenPassword) throws SQLException {
+    public synchronized boolean authenticateUser(String givenUserName, String givenPassword) throws SQLException {
         System.out.println("Status: Authenticating user from database");
 
         Statement queryStatement = null;

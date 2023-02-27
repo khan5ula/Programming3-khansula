@@ -15,20 +15,30 @@ import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 
-
+/**
+ * Custom HttpHandler class that only covers POST requests,
+ */
 public class RegistrationHandler implements HttpHandler {
-    private MessageDatabase messageDatabase;
-
     public RegistrationHandler() {
-        messageDatabase = MessageDatabase.getInstance();
+        /* Empty default constructor */
     }
 
+    /**
+     * Method that checks whether the http request is POST.
+     * Checks the request contents and tries to add a new
+     * user to the database using the provided user information
+     * 
+     * The database instance is a singleton object
+     * 
+     * @param exchangeObject received from the client.
+     */
     @Override
     public void handle(HttpExchange exchangeObject) {
         Headers headers = exchangeObject.getRequestHeaders();
         String newUser = "";
         int code = 0;
         JSONObject usertoJSON;
+        MessageDatabase messageDatabase = MessageDatabase.getInstance();
 
         System.out.println("Status: Request handled in thread " + Thread.currentThread().getId());
 
@@ -79,12 +89,19 @@ public class RegistrationHandler implements HttpHandler {
             }
         }
 
-        /* We've got a response code. Let's send it. Godspeed. */
+        /* handle() method is now finished. Response code is ready. Time to send it. */
         sendResponse(code, exchangeObject);
         System.out.println("The response code is: " + code);
     }
 
-    /* Method that checks if the exchange object contains POST request */
+    /** 
+     * Method that checks if the exchange object contains POST request 
+     * 
+     * @param exhangeObject is received from the client
+     * 
+     * @return 0 if the request is POST, 400 if not
+     * the result is used as Http response code
+     */
     private int checkRequestForPost(HttpExchange exchangeObject) {
         if (exchangeObject.getRequestMethod().equalsIgnoreCase("POST")) {
             System.out.println("Success: The request is POST");
@@ -94,7 +111,14 @@ public class RegistrationHandler implements HttpHandler {
         return 400;
     }
 
-    /* Method that checks if the exchange header has a content type */
+    /**
+     * Method that checks if the exchange header has a content type 
+     * 
+     * @param headers HttpHeaders from the client
+     * 
+     * @return 0 if headers contains Content-Type, 411 if not
+     * the result is used as Http response code
+     */
     private int checkContentTypeAvailability(Headers headers) {
         if (headers.containsKey("Content-Type")) {
             System.out.println("Success: Content-Type found from header");
@@ -104,7 +128,15 @@ public class RegistrationHandler implements HttpHandler {
         return 411;
     }
 
-    /* Method that checks if the requested content type is supported */
+    /**
+     * Method that checks if the requested content type is supported,
+     * the content-type must be "application/json"
+     * 
+     * @param headers HttpHeaders from the client
+     * 
+     * @return 0 if supported Content-Type was found, 415 if not
+     * the result is used as Http response code
+     */
     private int checkContentTypeContents(Headers headers) {
         String contentType = headers.get("Content-Type").get(0);
         if (contentType.equalsIgnoreCase("application/json")) {
@@ -115,7 +147,15 @@ public class RegistrationHandler implements HttpHandler {
         return 415;
     }
     
-    /* Method that checks if the given user information format is valid */
+    /** 
+     * Method that checks if the given user information format is valid
+     * Checks if the content is null
+     * 
+     * @param input received from client with InputStream
+     * 
+     * @return 200 if content is OK, 412 if not
+     * the result is used as Http response code
+     */
     private int checkUserFormat(String input) {
         if (input != null && input.length() > 0) {
             System.out.println("Success: User information is in expected format");
@@ -125,7 +165,16 @@ public class RegistrationHandler implements HttpHandler {
         return 412;
     }
 
-    /* Method that checks if the given JSON is valid */
+    /**
+     * Method that checks if the given JSON is valid
+     * by checking that all required fields are included
+     * and they are not null
+     * 
+     * @param input received from client and converted to JSONObject
+     * 
+     * @return 200 if content is ok, 413 if not
+     * the result is used as Http response code
+     */
     private int checkUserContent(JSONObject input) {
         if (input.has("username") && input.getString("username").length() > 0) {
             if (input.has("password") && input.getString("password").length() > 0) {
@@ -140,7 +189,16 @@ public class RegistrationHandler implements HttpHandler {
         return 413;
     }
 
-    /* Method that sends a response to the output stream depending on the html status code */
+    /**
+     * Method that sends a response to the output stream 
+     * depending on the what is the html status code is.
+     * 
+     * Sends the status code and a proper message to the client
+     * as output stream.
+     * 
+     * @param code is the html status code received from handle() method
+     * @param exchangeObject is the html exchange object received from the client
+     */
     public void sendResponse(int code, HttpExchange exchangeObject) {
         StringBuilder responseBuilder = new StringBuilder("");
 

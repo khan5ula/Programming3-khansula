@@ -1,33 +1,48 @@
 package com.server;
 
-import com.sun.net.httpserver.HttpsServer;
-
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.net.InetSocketAddress;
 import java.security.KeyStore;
+import java.util.concurrent.Executors;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.TrustManagerFactory;
 
-import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpContext;
+import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsParameters;
+import com.sun.net.httpserver.HttpsServer;
 
-import java.util.concurrent.Executors;
-
-
+/**
+ * This class represents a simple HTTP server that authenticates 
+ * user connections.
+ *
+ * The server calls RegistrationHandler to register new users to the database
+ * and WarningHandler to GET and POST warning messages.
+ *
+ * The server uses SSL for secure connections and requires 
+ * a self-signed certificate for authentication.
+ */
 public class Server {
-    StringBuilder textStorage = new StringBuilder("");
+    /**
+     * Simple constructor to create a new sŚerver instance
+     */
+    private Server() {}
 
-    private Server() {
-        // nothing here
-    }
-
+    /**
+     * Creates and returns a new SSLContext object for the server.
+     * 
+     * The SSLContext is used to establish secure connections with 
+     * clients using a self-signed certificate for authentication.
+     * 
+     * @return A new SSLContext object for the server.
+     * 
+     * @throws Exception if there is an error creating the SSLContext.
+     */
     private static SSLContext serverSSLContext() throws Exception {
-        /* Create a server context using a self-signed certificate */
         char[] passphrase = "password".toCharArray();
         KeyStore ks = KeyStore.getInstance("JKS");
         ks.load(new FileInputStream("keystore.jks"), passphrase);

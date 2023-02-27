@@ -1,34 +1,67 @@
 package com.server;
 
+/**
+ * Represents a user in the system with 
+ * a username, password, and email address.
+ */
 public class User {
-    String username;
-    String password;
-    String email;
+    private String username;
+    private String password;
+    private String email;
 
+    /**
+     * Creates a new User object with the specified 
+     * username, password, and email address.
+     *
+     * @param username: The username of the user
+     * @param password: The password of the user
+     * @param email: The email address of the user
+     */
     public User(String username, String password, String email) {
         this.username = username;
         this.password = password;
         this.email = email;
     }
 
-    String getUsername() {
+    /* Basic getters */
+    public String getUsername() {
         return this.username;
     }
 
-    String getPassword() {
+    public String getPassword() {
         return this.password;
     }
 
-    String getEmail() {
+    public String getEmail() {
         return this.email;
     }
 
+    /**
+     * Sets the username of the user to the specified value.
+     *
+     * @param username the new username for the user
+     * @throws IllegalArgumentException if the specified username is empty
+     */
     public void setUsername(String username) throws IllegalArgumentException {
         if (!username.isEmpty()) {
             this.username = username;
         } else {
-            System.out.println("Error: Entered invalid nickname");
-            throw new IllegalArgumentException();
+            System.out.println("Error: Tried to register empty username");
+            throw new IllegalArgumentException("Username cannot be empty");
+        }
+    }
+
+    /**
+     * Sets the password of the user to the specified value.
+     * @param password
+     * @throws IllegalArgumentException if the specified password is empty 
+     */
+    public void setPassword(String password) throws IllegalArgumentException {
+        if (!password.isEmpty()) {
+            this.password = password;
+        } else {
+            System.out.println("Error: Tried to enter empty password");
+            throw new IllegalArgumentException("Password cannot be empty");
         }
     }
 }
