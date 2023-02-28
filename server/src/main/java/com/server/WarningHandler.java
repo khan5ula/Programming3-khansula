@@ -67,7 +67,7 @@ public class WarningHandler implements HttpHandler {
 
             /* Make sure the content is proper JSON */
             if (code == 0 && !jsonChecker.isJSONValid(content)) {
-                code = 400 ;
+                code = 400;
             }
 
             /* Check if the content has all required information */

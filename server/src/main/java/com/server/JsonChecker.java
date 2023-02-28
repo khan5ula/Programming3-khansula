@@ -20,8 +20,10 @@ public class JsonChecker {
         try {
             new JSONObject(content);
         } catch (JSONException e) {
+            System.out.println("Error: The received message was not proper JSON");
             return false;
         }
+        System.out.println("Success: The received message was proper JSON");
         return true;
     }
 
@@ -29,17 +31,33 @@ public class JsonChecker {
      * Method that iterates through received content 
      * and checks if it contains all required information 
      * @param content String extracted from the client with InputStream
-     * @return 200 if all fields are OK, if not, return 413
+     * @return int 200 if all fields are OK, if not, return 413
      */
     public int checkContentIsValid(final String content) {
+        System.out.println("Status: Checking if the content has nickname, latitude, longitude, dangertype and sent");
+        System.out.println("Status: Also checking that latitude ang longitude are double");
+        
         final JSONObject contentToJSON = new JSONObject(content);
 
         if (contentToJSON.has("nickname") && !contentToJSON.isNull("nickname")) {
-            if (contentToJSON.has("latitude") && !contentToJSON.isNull("latitude") && contentToJSON.getDouble("latitude") > 0) {
-                if (contentToJSON.has("longitude") && !contentToJSON.isNull("longitude") && contentToJSON.getDouble("longitude") > 0) {
+            if (contentToJSON.has("latitude") && !contentToJSON.isNull("latitude")) {
+                if (contentToJSON.has("longitude") && !contentToJSON.isNull("longitude")) {
                     if (contentToJSON.has("dangertype") && !contentToJSON.isNull("dangertype")) {
                         if (contentToJSON.has("sent") && !contentToJSON.isNull(("sent"))) {
                             System.out.println("Success: The content contains all required information");
+                            System.out.println("Status: Checking if latitude and longitude are in double format");
+                            
+                            /* Check that latitude and longitude are double */
+                            try {
+                                contentToJSON.getDouble("latitude");
+                                contentToJSON.getDouble("longitude");
+                            } catch (JSONException e) {
+                                System.out.println("Failure: Latitude and/or longitude were not double");
+                                return 413;
+                            }
+
+                            System.out.println("Success: Latitude and longitude are double");
+                            System.out.println("Success: Content is accepted");
                             return 200;            
                         }
                     }
@@ -63,14 +81,11 @@ public class JsonChecker {
 
         /* List of accepted danger types */
         switch(dangertype) {
-            case "moose":
-                return 200;
-            case "reindeer":
-                return 200;
-            case "meteorite":
+            case "moose": case "reindeer": case "meteorite":
+                System.out.println("Success: Proper danger type detected");
                 return 200;
         }
-
+        System.out.println("Error: Invalid danger type detected");
         return 413;
     }
 
@@ -83,9 +98,11 @@ public class JsonChecker {
         System.out.println("Status: Checking if the WarningMessage has area code and phone number");
         if (content.has("areacode")) {
             if (content.has("phonenumber")) {
+                System.out.println("Status: The message has areacode and phone number");
                 return true;
             }
         }
+        System.out.println("Status: The message does not have both areacode and phone number");
         return false;
     }
 }

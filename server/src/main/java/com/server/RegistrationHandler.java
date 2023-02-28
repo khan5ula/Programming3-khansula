@@ -89,7 +89,7 @@ public class RegistrationHandler implements HttpHandler {
 
         /* handle() method is now finished. Response code is ready. Time to send it. */
         sendResponse(code, exchangeObject);
-        System.out.println("The response code is: " + code);
+        System.out.println("Status: Response " + code + " has been sent, registration handle ends");
     }
 
     /** 

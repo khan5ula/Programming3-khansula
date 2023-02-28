@@ -39,7 +39,7 @@ public class UserAuthenticator extends BasicAuthenticator {
         } catch (final SQLException e) {
             System.out.println("Error occured while authenticating user: " + e.getMessage());
         }
-        System.out.println("Status: User authenticator noticed incorrect credentials");
+        System.out.println("Status: User authenticator detected incorrect credentials");
         return false;
     }
 
