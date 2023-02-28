@@ -43,6 +43,7 @@ public class WarningHandler implements HttpHandler {
         int code = 0;
         byte [] bytes = null;
         final MessageDatabase messageDatabase = MessageDatabase.getInstance();
+        final JsonChecker jsonChecker = new JsonChecker();
 
         System.out.println("Status: Request handled in thread " + Thread.currentThread().getId());
 
@@ -66,30 +67,36 @@ public class WarningHandler implements HttpHandler {
                 code = 412;
             }
 
-            /* Check if the content has all required information */
-            if (code == 0)
-            if ((code = checkContentIsValid(content)) == 200) {
-                contentToJSON = new JSONObject(content);
+            /* Make sure the content is proper JSON */
+            if (code == 0 && !jsonChecker.isJSONValid(content)) {
+                code = 400 ;
+            }
 
-                /* Check if the dangertype is in accepted format */
-                if ((code = checkDangertype(contentToJSON)) == 200) {
-                    try {
-                        /* Parse the timestamp content, will throw if invalid */
-                        final OffsetDateTime offsetTime = OffsetDateTime.parse(contentToJSON.getString("sent"));
-                        final LocalDateTime time = offsetTime.toLocalDateTime();  
-                        
-                        /* Add new message to the database, use a correct constructor depending on the received parameters */
-                        if (checkJsonForAreaAndPhone(contentToJSON)) {
-                            messageDatabase.setMessage(new WarningMessage(contentToJSON.getString("nickname"), contentToJSON.getDouble("latitude"), contentToJSON.getDouble("longitude"), contentToJSON.getString("dangertype"), time, contentToJSON.getString("areacode"), contentToJSON.getString("phonenumber")));
-                        } else {
-                            messageDatabase.setMessage(new WarningMessage(contentToJSON.getString("nickname"), contentToJSON.getDouble("latitude"), contentToJSON.getDouble("longitude"), contentToJSON.getString("dangertype"), time));
+            /* Check if the content has all required information */
+            if (code == 0) {
+                if ((code = jsonChecker.checkContentIsValid(content)) == 200) {
+                    contentToJSON = new JSONObject(content);
+    
+                    /* Check if the dangertype is in accepted format */
+                    if ((code = jsonChecker.checkDangertype(contentToJSON)) == 200) {
+                        try {
+                            /* Parse the timestamp content, will throw if invalid */
+                            final OffsetDateTime offsetTime = OffsetDateTime.parse(contentToJSON.getString("sent"));
+                            final LocalDateTime time = offsetTime.toLocalDateTime();  
+                            
+                            /* Add new message to the database, use a correct constructor depending on the received parameters */
+                            if (jsonChecker.checkJsonForAreaAndPhone(contentToJSON)) {
+                                messageDatabase.setMessage(new WarningMessage(contentToJSON.getString("nickname"), contentToJSON.getDouble("latitude"), contentToJSON.getDouble("longitude"), contentToJSON.getString("dangertype"), time, contentToJSON.getString("areacode"), contentToJSON.getString("phonenumber")));
+                            } else {
+                                messageDatabase.setMessage(new WarningMessage(contentToJSON.getString("nickname"), contentToJSON.getDouble("latitude"), contentToJSON.getDouble("longitude"), contentToJSON.getString("dangertype"), time));
+                            }
+                        } catch (DateTimeException | JSONException | SQLException e) {
+                            code = 413;
+                            System.out.println("Error: Problem with message content: " + e.getMessage());
                         }
-                    } catch (DateTimeException | JSONException | SQLException e) {
-                        code = 413;
-                        System.out.println("Error: Problem with message content: " + e.getMessage());
                     }
-                }
-            }        
+                }        
+            }
 
             /* Done. Send response headers */
             System.out.println("Status: Got into end of POST; sending response");
@@ -129,69 +136,4 @@ public class WarningHandler implements HttpHandler {
             outputStream.close();
         }
     }
-
-    /**
-     * Method that iterates through received content 
-     * and checks if it contains all required information 
-     * @param content String extracted from the client with InputStream
-     * @return 200 if all fields are OK, if not, return 413
-     */
-    private int checkContentIsValid(final String content) {
-        final JSONObject contentToJSON = new JSONObject(content);
-
-        if (contentToJSON.has("nickname") && !contentToJSON.isNull("nickname")) {
-            if (contentToJSON.has("latitude") && !contentToJSON.isNull("latitude")) {
-                if (contentToJSON.has("longitude") && !contentToJSON.isNull("longitude")) {
-                    if (contentToJSON.has("dangertype") && !contentToJSON.isNull("dangertype")) {
-                        if (contentToJSON.has("sent") && !contentToJSON.isNull(("sent"))) {
-                            System.out.println("Success: The content contains all required information");
-                            return 200;            
-                        }
-                    }
-                }
-            }
-        }
-
-        System.out.println("Error: The content does not have all required information");  
-        return 413;
-    }
-    
-    /**
-     * Method that checks if the content's danger type contains accepted information
-     * Accepted danger types are:
-     * moose, reindeer, meteorite
-     * @param content the client's message in JSONObject format
-     * @return 200 if dangertype is OK, 413 if not
-     */
-    private int checkDangertype(final JSONObject content) {
-        String dangertype = content.getString("dangertype").toLowerCase();
-
-        /* List of accepted danger types */
-        switch(dangertype) {
-            case "moose":
-                return 200;
-            case "reindeer":
-                return 200;
-            case "meteorite":
-                return 200;
-        }
-
-        return 413;
-    }
-
-    /**
-     * Method that checks if the JSONObject has fields: areacode and phonenumber
-     * @param content JSONObject that contains the information for WarningMessage
-     * @return true if content has areacode and phonenumber, false otherwise
-     */
-    private boolean checkJsonForAreaAndPhone(final JSONObject content) {
-        System.out.println("Status: Checking if the WarningMessage has area code and phone number");
-        if (content.has("areacode")) {
-            if (content.has("phonenumber")) {
-                return true;
-            }
-        }
-        return false;
-    }
-
 }
