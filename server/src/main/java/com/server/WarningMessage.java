@@ -83,14 +83,30 @@ public class WarningMessage {
         return this.dangertype;
     }
 
+    /**
+     * Transforms the class member variable LocalDateTime sent 
+     * into Unix epoch format
+     * @return this.sent as Long
+     */
     public long dateAsInt() {
         return this.sent.toInstant(ZoneOffset.UTC).toEpochMilli();
     }
 
+    /**
+     * Takes a time-zone offset and returns a sent class member value 
+     * combined with the given timezone (ZonedDateTime)
+     * @param zone The time-zone offset
+     * @return ZonedDateTime object (this.sent + zone)
+     */
     public ZonedDateTime getSent(ZoneOffset zone) {
         return this.sent.atZone(zone);
     }
 
+    /**
+     * Takes Unix epoch time value in Long format, and transforms it into LocalDateTime
+     * @param epoch The unix time value as Long
+     * @return LocalDateTime object
+     */
     public static LocalDateTime setSent(long epoch) {
         return LocalDateTime.ofInstant(Instant.ofEpochMilli(epoch), ZoneOffset.UTC);
     }
@@ -111,6 +127,11 @@ public class WarningMessage {
         return phonenumber;
     }
 
+    /**
+     * Returns the value of class member variable areaAndPhone.
+     * <p>Used for a quick check if the message has areacode and phonenumber.
+     * @return boolean, value from member variable areaAndPhone
+     */
     public boolean hasItAreaAndPhone() {
         return areaAndphone;
     }

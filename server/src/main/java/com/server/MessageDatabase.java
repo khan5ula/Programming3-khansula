@@ -14,13 +14,21 @@ import org.apache.commons.codec.digest.Crypt;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-/* Class that wraps all relevant database methods */
+/* Class that wraps all database related methods */
 public class MessageDatabase {
     private Connection dbConnection = null;
     private static MessageDatabase dbInstance = null;
     private SecureRandom secureRandom = null;
 
-    /* Public getter for Singleton implementation */
+    /**
+     * Public getter for the singleton instance. Other classes must use 
+     * this method instead of the actual constructor.
+     * <p>Ensures that only one instance of the class object
+     * exists.
+     * <p>If the class member variable instance it null, calls the
+     * constructor to create one instance
+     * @return Messagedatabase object
+     */
     public static synchronized MessageDatabase getInstance() {
         if (dbInstance == null) {
             dbInstance = new MessageDatabase();
@@ -31,18 +39,31 @@ public class MessageDatabase {
     /* Private constructor for Singleton implementation */
     private MessageDatabase() {
         try {
+            System.out.println("Status: MessageDatabase constructor calls initialize");
             initialize();
-        } catch (SQLException e) {
+        } catch (final SQLException e) {
             System.out.println("Error: Something went wrong in the DB constructor: " + e.getMessage());
         }
     }
 
     /* Method that creates a SQL connection */
+
+    /**
+     * Method that is used to initialize database tables.
+     * <p>Calls createMessageTable() and createUserTable() to create
+     * two tables for the database.
+     * <p>Also initializes SecureRandom class variable required for
+     * secure passwords.
+     * @return boolean, true if SQL database connection exists, false otherwise
+     * @throws SQLException
+     */
     private boolean initialize() throws SQLException {
-        System.out.println("Status: Initializing database connection");
+        System.out.println("Status: Initializing database");
 
         if (this.dbConnection != null) {
+            System.out.println("Status: Calling method for message table creation");
             createMessageTable();
+            System.out.println("Status: Calling method for user table creation");
             createUserTable();
             this.secureRandom = new SecureRandom();
             return true;
@@ -51,11 +72,20 @@ public class MessageDatabase {
         return false;
     }
 
-    /* Method for the server, opens a database connection with a DB of given path */
-    public void open(String dbName) throws SQLException {
+    /**
+     * Method that opens an existing database file or creates a new one.
+     * <p>Uses the parameter value to look for a database file. 
+     * If a file with the given name is not found, creates a new file.
+     * <p>Combines the given name with "jdbc:sqlite:" to create a
+     * database connection.
+     * 
+     * @param dbName, String that provides a name for the database file
+     * @throws SQLException
+     */
+    public void open(final String dbName) throws SQLException {
         System.out.println("Status: Opening the database file");
         boolean exists = false;
-        File file = new File(dbName);
+        final File file = new File(dbName);
         System.out.println("Status: Checking the given database file: " + file.toString());
 
         /* Check if the given file can be found. Also make sure that it is not a directory */
@@ -68,9 +98,9 @@ public class MessageDatabase {
         }
 
         try {
-            String address = "jdbc:sqlite:" + dbName;
+            final String address = "jdbc:sqlite:" + dbName;
             this.dbConnection = DriverManager.getConnection(address);
-        } catch (Exception e) {
+        } catch (final Exception e) {
             System.out.println("Error while estabilishing dbConnection: " + e.getMessage());
         }
 
@@ -81,12 +111,26 @@ public class MessageDatabase {
         }
     }
 
-    /* Method that handles the message table creation */
+    /**
+     * Method that creates a message table to the database.
+     * <p>The table will contain following attributes:
+     * <ul>
+     * <li>sent (int)</li>
+     * <li>nickname (varchar)</li>
+     * <li>latitude (double)</li>
+     * <li>longitude (double)</li>
+     * <li>dangertype (varchar)</li>
+     * <li>areacode (int)</li>
+     * <li>phonenumber (varchar)</li>
+     * </ul>
+     * <p>Primary key is the combination of sent and nickname.
+     * @throws SQLException
+     */
     private void createMessageTable() throws SQLException {
         System.out.println("Status: Creating message table");
         
         try {
-            String createPrompt = 
+            final String createPrompt = 
             "CREATE TABLE messages (" +
             "sent INT NOT NULL," +
             "nickname VARCHAR (50) NOT NULL," +
@@ -97,41 +141,56 @@ public class MessageDatabase {
             "phonenumber VARCHAR (50)," +
             "PRIMARY KEY (sent, nickname))";
 
-            Statement createStatement = this.dbConnection.createStatement();
+            final Statement createStatement = this.dbConnection.createStatement();
             createStatement.executeUpdate(createPrompt);
             createStatement.close();
 
             System.out.println("Success: Message table initialized");
-        } catch (SQLException e) {
+        } catch (final SQLException e) {
             System.out.println("SQLException occured while creating message table: " + e.getMessage());
-        } catch (Exception e) {
+        } catch (final Exception e) {
             System.out.println("Error occured while creating message table: " + e.getMessage());
         }
     }
 
-    /* Method that handles the user table creation */
+    /**
+     * Method that creates a user table to the database.
+     * <p>The table will contain following attributes:
+     * <ul>
+     * <li>username (varchar)</li>
+     * <li>password (varchar)</li>
+     * <li>email (varchar)</li>
+     * </ul>
+     * <p>Primary key is the username since it is required to be unique
+     * @throws SQLException
+     */
     private void createUserTable() throws SQLException {
         System.out.println("Status: Creating user table");
         try {
-            String createPrompt =
+            final String createPrompt =
             "CREATE TABLE users (" +
             "username VARCHAR (50) PRIMARY KEY," +
             "password VARCHAR (50) NOT NULL," +
             "email VARCHAR (50) NOT NULL)";
 
-            Statement createStatement = this.dbConnection.createStatement();
+            final Statement createStatement = this.dbConnection.createStatement();
             createStatement.executeUpdate(createPrompt);
             createStatement.close();
 
             System.out.println("Success: User table initialized");
-        } catch (SQLException e) {
+        } catch (final SQLException e) {
             System.out.println("SQLException occured while creating user table: " + e.getMessage());
-        } catch (Exception e) {
+        } catch (final Exception e) {
             System.out.println("Error occured while creating user table: " + e.getMessage());
         }
     }
 
-    /* Method for closing the database connection */
+    /**
+     * Method that closes the database connection.
+     * <p>Calls the Connection.close() method and 
+     * sets the Connection class member variable to null.
+     * @throws SQLException
+     */
     public void closeDB() throws SQLException {
         if (this.dbConnection == null) {
             this.dbConnection.close();
@@ -141,10 +200,17 @@ public class MessageDatabase {
     }
 
     /* Method for inserting a message to database */
-    public void setMessage(WarningMessage message) throws SQLException {
+
+    /**
+     * Method that inserts a new WarningMessage to the database.
+     * <p>Creates a Insert into messages statement.
+     * @param message WarningMessage that WarningHandler.handle() passes to the database
+     * @throws SQLException
+     */
+    public void setMessage(final WarningMessage message) throws SQLException {
         System.out.println("Status: Setting a new WarningMessage to database");
 
-        StringBuilder temp = new StringBuilder("insert into messages ");
+        final StringBuilder temp = new StringBuilder("insert into messages ");
 
         temp.append("VALUES('");
         temp.append(message.dateAsInt());
@@ -162,20 +228,23 @@ public class MessageDatabase {
         temp.append(message.getPhonenumber());
         temp.append("')");
 
-        String setMessageString = temp.toString();
+        final String setMessageString = temp.toString();
         Statement createStatement;
         createStatement = this.dbConnection.createStatement();
         createStatement.executeUpdate(setMessageString);
         createStatement.close();
     }
 
-    /*  Method that checks if there are any messages in the database,
-        breaks the loop after 1 message instance has been found
-     */
+     /**
+      * Method that checks if there are any messages in the database.
+      * <p>Breaks the loop if one message instance has been found.
+      * @return int, 0 if there were not messages, 1 if any were found
+      * @throws SQLException
+      */
     public int checkIfThereAreMessages() throws SQLException {
         int count = 0;
-        Statement queryStatement = this.dbConnection.createStatement();
-        ResultSet result = queryStatement.executeQuery("SELECT * FROM messages ORDER BY rowid");
+        final Statement queryStatement = this.dbConnection.createStatement();
+        final ResultSet result = queryStatement.executeQuery("SELECT * FROM messages ORDER BY rowid");
 
         while (result.next()) {
             count++;
@@ -188,19 +257,27 @@ public class MessageDatabase {
     }
 
     /* Method for getting messages from the database */
+
+    /**
+     * Method for getting messages from the database.
+     * <p>Creates a Select from messages statement.
+     * <p>Selects all messages from the messages table.
+     * @return JSONArray of all WarningMessages stored in the database.
+     * @throws SQLException
+     */
     public JSONArray getMessages() throws SQLException {
         System.out.println("Status: Getting messages from database");
 
         JSONObject jsonObject = new JSONObject();
-        JSONArray jsonArray = new JSONArray();
+        final JSONArray jsonArray = new JSONArray();
 
         if (checkIfThereAreMessages() > 0) {
-            Statement queryStatement = this.dbConnection.createStatement();
-            ResultSet result = queryStatement.executeQuery("SELECT * FROM messages ORDER BY rowid");
+            final Statement queryStatement = this.dbConnection.createStatement();
+            final ResultSet result = queryStatement.executeQuery("SELECT * FROM messages ORDER BY rowid");
     
             while (result.next()) {
                 if (result.getInt("areacode") > 0 && result.getString("phonenumber") != null) {
-                    WarningMessage msg = new WarningMessage(result.getString("nickname"), result.getDouble("latitude"), result.getDouble("longitude"), result.getString("dangertype"), WarningMessage.setSent(result.getLong("sent")), result.getString("areacode"), result.getString("phonenumber"));
+                    final WarningMessage msg = new WarningMessage(result.getString("nickname"), result.getDouble("latitude"), result.getDouble("longitude"), result.getString("dangertype"), WarningMessage.setSent(result.getLong("sent")), result.getString("areacode"), result.getString("phonenumber"));
                     jsonObject.put("sent", msg.getSent(ZoneOffset.UTC));
                     jsonObject.put("nickname", msg.getNickname());
                     jsonObject.put("latitude", msg.getLatitude());
@@ -209,7 +286,7 @@ public class MessageDatabase {
                     jsonObject.put("areacode", msg.getAreacode());
                     jsonObject.put("phonenumber", msg.getPhonenumber());
                 } else {
-                    WarningMessage msg = new WarningMessage(result.getString("nickname"), result.getDouble("latitude"), result.getDouble("longitude"), result.getString("dangertype"), WarningMessage.setSent(result.getLong("sent")));
+                    final WarningMessage msg = new WarningMessage(result.getString("nickname"), result.getDouble("latitude"), result.getDouble("longitude"), result.getString("dangertype"), WarningMessage.setSent(result.getLong("sent")));
                     jsonObject.put("sent", msg.getSent(ZoneOffset.UTC));
                     jsonObject.put("nickname", msg.getNickname());
                     jsonObject.put("latitude", msg.getLatitude());
@@ -226,8 +303,17 @@ public class MessageDatabase {
         return jsonArray;
     }
 
-    /* Method that puts a new user to database */
-    public synchronized boolean setUser(JSONObject user) throws SQLException {
+    /**
+     * Method that puts a new user to the database.
+     * <p>Creates Insert into users statement.
+     * <p>Calls checkIfUserExists() method to check if the username is available.
+     * <p>Checks if the user passed as parameter has proper username and password information.
+     * <p>Stores the password securely using hash and salt.
+     * @param user JSONObject that contains username and password
+     * @return boolean, true if the user was added succesfully, false if not
+     * @throws SQLException
+     */
+    public synchronized boolean setUser(final JSONObject user) throws SQLException {
         System.out.println("Status: Setting new user to database");
 
         if (checkIfUserExists(user.getString("username"))) {
@@ -241,15 +327,14 @@ public class MessageDatabase {
         }
 
         /* Hash the password with salt */
-        byte bytes[] = new byte[13];
+        final byte bytes[] = new byte[13];
         this.secureRandom.nextBytes(bytes);
-        String saltBytes = new String(Base64.getEncoder().encode(bytes));
-        String salt = "$6$" + saltBytes;
-        String hashedPassword = Crypt.crypt(user.getString("password"), salt);
-        
+        final String saltBytes = new String(Base64.getEncoder().encode(bytes));
+        final String salt = "$6$" + saltBytes;
+        final String hashedPassword = Crypt.crypt(user.getString("password"), salt);      
 
         try {
-            StringBuilder temp = new StringBuilder("insert into users ");
+            final StringBuilder temp = new StringBuilder("insert into users ");
             temp.append("VALUES('");
             temp.append(user.getString("username"));
             temp.append("','");
@@ -257,7 +342,7 @@ public class MessageDatabase {
             temp.append("','");
             temp.append(user.getString("email"));
             temp.append("')");
-            String setUserString = temp.toString();
+            final String setUserString = temp.toString();
             
             Statement createStatement;
             createStatement = this.dbConnection.createStatement();
@@ -265,7 +350,7 @@ public class MessageDatabase {
             createStatement.close();
             
             return true;       
-        } catch (Exception e) {
+        } catch (final Exception e) {
             System.out.println("Error occured in MessageDatabase.setUser(): " + e.getMessage());
         }
 
@@ -274,13 +359,21 @@ public class MessageDatabase {
     }
 
     /* Method that checks if given username is in the database */
-    private synchronized boolean checkIfUserExists(String givenUsername) throws SQLException {
+
+    /**
+     * Method that checks if the given username is in the database.
+     * <p>Creates a select username from users query.
+     * @param givenUsername, the username to be queried as a String
+     * @return boolean, true if the username was found, false if not
+     * @throws SQLException
+     */
+    private synchronized boolean checkIfUserExists(final String givenUsername) throws SQLException {
         System.out.println("Status: Checking from database if given username exists");
 
         Statement queryStatement = null;
         ResultSet result;
         
-        String checkUser = "select username from users where username = '" + givenUsername + "'";
+        final String checkUser = "select username from users where username = '" + givenUsername + "'";
         System.out.println("Status: Checking user");
 
         try {
@@ -291,7 +384,7 @@ public class MessageDatabase {
                 System.out.println("User with the given username found");
                 return true;
             }
-        } catch (Exception e) {
+        } catch (final Exception e) {
             System.out.println("Error occured while doing a check user exists query: " + e.getMessage());
         }
 
@@ -299,13 +392,23 @@ public class MessageDatabase {
     }
 
     /* Method that checks if the given username/password combination can be found from database */
-    public synchronized boolean authenticateUser(String givenUserName, String givenPassword) throws SQLException {
+
+    /**
+     * Method that authenticates the user by checking if the given credentials are proper.
+     * <p>Creates a select username, password from users query.
+     * <p>This method is required by UserAuthenticator.checkCredentials().
+     * @param givenUserName as String
+     * @param givenPassword as String
+     * @return boolean, true if the user credentials were proper, false if not/username was not found
+     * @throws SQLException
+     */
+    public synchronized boolean authenticateUser(final String givenUserName, final String givenPassword) throws SQLException {
         System.out.println("Status: Authenticating user from database");
 
         Statement queryStatement = null;
         ResultSet result;
         
-        String getMessagesString = "select username, password from users where username = '" + givenUserName + "'";
+        final String getMessagesString = "select username, password from users where username = '" + givenUserName + "'";
         
         queryStatement = this.dbConnection.createStatement();
         result = queryStatement.executeQuery(getMessagesString);
@@ -315,7 +418,7 @@ public class MessageDatabase {
             return false;
         } else {
             /* Fetch the hashed password from database */
-            String hashedPassword = result.getString("password");
+            final String hashedPassword = result.getString("password");
             /* Check if the given plaintext password matches with the hashed one */
             if (hashedPassword.equals(Crypt.crypt(givenPassword, hashedPassword))) {
                 System.out.println("Status: User credentials are correct");

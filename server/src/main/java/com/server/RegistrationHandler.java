@@ -24,10 +24,8 @@ public class RegistrationHandler implements HttpHandler {
     /**
      * Method that checks whether the http request is POST.
      * Checks the request contents and tries to add a new
-     * user to the database using the provided user information
-     * 
-     * The database instance is a singleton object
-     * 
+     * user to the database using the provided user information.
+     * <p>Uses the database with a singleton object.
      * @param exchangeObject received from the client.
      */
     @Override
@@ -93,10 +91,10 @@ public class RegistrationHandler implements HttpHandler {
     }
 
     /** 
-     * Method that checks if the exchange object contains POST request 
-     * @param exhangeObject is received from the client
-     * @return 0 if the request is POST, 400 if not
-     * the result is used as Http response code
+     * Method that checks if the exchange object contains POST request .
+     * <p>The return value should be used as HTTP response code.
+     * @param exchangeObject is received from the client
+     * @return int, 0 if the request is POST, 400 if not
      */
     private int checkRequestForPost(HttpExchange exchangeObject) {
         if (exchangeObject.getRequestMethod().equalsIgnoreCase("POST")) {
@@ -110,7 +108,7 @@ public class RegistrationHandler implements HttpHandler {
     /**
      * Method that checks if the exchange header has a content type 
      * @param headers HttpHeaders from the client
-     * @return 0 if headers contains Content-Type, 411 if not
+     * @return int, 0 if headers contains Content-Type, 411 if not
      * the result is used as Http response code
      */
     private int checkContentTypeAvailability(Headers headers) {
@@ -123,11 +121,11 @@ public class RegistrationHandler implements HttpHandler {
     }
 
     /**
-     * Method that checks if the requested content type is supported,
-     * the content-type must be "application/json"
+     * Method that checks if the requested content type is supported.
+     * <p>The content-type must be "application/json".
+     * <p>The return value should be used as HTTP response code.
      * @param headers HttpHeaders from the client
-     * @return 0 if supported Content-Type was found, 415 if not
-     * the result is used as Http response code
+     * @return int, 0 if supported Content-Type was found, 415 if not
      */
     private int checkContentTypeContents(Headers headers) {
         String contentType = headers.get("Content-Type").get(0);
@@ -140,11 +138,10 @@ public class RegistrationHandler implements HttpHandler {
     }
     
     /** 
-     * Method that checks if the given user information format is valid
-     * Checks if the content is null
+     * Method that checks if the given input is null.
+     * <p>The return value should be used as HTTP response code.
      * @param input received from client with InputStream
-     * @return 200 if content is OK, 412 if not
-     * the result is used as Http response code
+     * @return int, 200 if content is OK, 412 if not
      */
     private int checkUserFormat(String input) {
         if (input != null && input.length() > 0) {
@@ -158,9 +155,9 @@ public class RegistrationHandler implements HttpHandler {
     /**
      * Method that checks if the given JSON is valid
      * by checking that all required fields are included
-     * and they are not null
+     * and they are not null.
      * @param input received from client and converted to JSONObject
-     * @return 200 if content is ok, 413 if not
+     * @return int, 200 if content is ok, 413 if not
      * the result is used as Http response code
      */
     private int checkUserContent(JSONObject input) {
@@ -179,13 +176,14 @@ public class RegistrationHandler implements HttpHandler {
 
     /**
      * Method that sends a response to the output stream 
-     * depending on the what is the html status code is.
-     * Sends the status code and a proper message to the client
+     * depending on the what is the HTML status code is.
+     * <p>Sends the status code and a proper message to the client
      * as output stream.
-     * @param code is the html status code received from handle() method
-     * @param exchangeObject is the html exchange object received from the client
+     * @param code is the HTML status code received from handle() method
+     * @param exchangeObject is the HTML exchange object received from the client
      */
     public void sendResponse(int code, HttpExchange exchangeObject) {
+        System.out.println("Status: Preparing the response message for the client");
         StringBuilder responseBuilder = new StringBuilder("");
 
         switch(code) {
@@ -218,6 +216,7 @@ public class RegistrationHandler implements HttpHandler {
 
         String responseString = responseBuilder.toString();
         byte[] bytes;
+        System.out.println("Status: The response string is now ready");
 
         try {
             bytes = responseString.getBytes("UTF-8");
@@ -226,6 +225,7 @@ public class RegistrationHandler implements HttpHandler {
                 exchangeObject.sendResponseHeaders(code, bytes.length);
                 OutputStream outputStream = exchangeObject.getResponseBody();
                 outputStream.write(bytes);
+                System.out.println("Status: The response has been sent");
                 outputStream.flush();
                 outputStream.close();
             } catch (IOException e) {

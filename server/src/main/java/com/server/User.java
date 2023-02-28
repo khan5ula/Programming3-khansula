@@ -39,7 +39,7 @@ public class User {
     /**
      * Sets the username of the user to the specified value.
      *
-     * @param username the new username for the user
+     * @param username The username String that will replace the original
      * @throws IllegalArgumentException if the specified username is empty
      */
     public void setUsername(String username) throws IllegalArgumentException {
@@ -53,7 +53,7 @@ public class User {
 
     /**
      * Sets the password of the user to the specified value.
-     * @param password
+     * @param password The password string that will replace the original
      * @throws IllegalArgumentException if the specified password is empty 
      */
     public void setPassword(String password) throws IllegalArgumentException {

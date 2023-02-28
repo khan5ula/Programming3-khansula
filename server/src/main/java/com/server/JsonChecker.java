@@ -12,14 +12,16 @@ public class JsonChecker {
 
     /**
      * Method that checks if the given String can properly
-     * by converted to JSONObject
-     * @param content the message received from client
-     * @return true if content is proper JSON, false if not
+     * by converted to JSONObject.
+     * <p>This method should be used to ensure the incoming content is a 
+     * JSONObject instead of only resembling JSON.
+     * @param content The message received from client as String
+     * @return boolean, true if content is proper JSON, false if not
      */
-    public boolean isJSONValid(String content) {
+    public boolean isJSONValid(final String content) {
         try {
             new JSONObject(content);
-        } catch (JSONException e) {
+        } catch (final JSONException e) {
             System.out.println("Error: The received message was not proper JSON");
             return false;
         }
@@ -29,9 +31,10 @@ public class JsonChecker {
 
     /**
      * Method that iterates through received content 
-     * and checks if it contains all required information 
-     * @param content String extracted from the client with InputStream
-     * @return int 200 if all fields are OK, if not, return 413
+     * and checks if it contains all required information.
+     * <p>The return value should be used as HTTP response code.
+     * @param content String received from the client with InputStream
+     * @return int, 200 if all fields are OK, 413 if not
      */
     public int checkContentIsValid(final String content) {
         System.out.println("Status: Checking if the content has nickname, latitude, longitude, dangertype and sent");
@@ -51,7 +54,7 @@ public class JsonChecker {
                             try {
                                 contentToJSON.getDouble("latitude");
                                 contentToJSON.getDouble("longitude");
-                            } catch (JSONException e) {
+                            } catch (final JSONException e) {
                                 System.out.println("Failure: Latitude and/or longitude were not double");
                                 return 413;
                             }
@@ -70,14 +73,19 @@ public class JsonChecker {
     }
 
     /**
-     * Method that checks if the content's danger type contains accepted information
-     * Accepted danger types are:
-     * moose, reindeer, meteorite
-     * @param content the client's message in JSONObject format
-     * @return 200 if dangertype is OK, 413 if not
+     * Method that checks if the content has supported danger type.
+     * <p>Accepted danger types are:
+     * <ul>
+     * <li>moose</li>
+     * <li>reindeer</li>
+     * <li>meteorite</li>
+     * </ul>
+     * <p>The return value should be used as HTTP response code.
+     * @param content JSONObject, from client
+     * @return int, 200 if dangertype is OK, 413 if not
      */
     public int checkDangertype(final JSONObject content) {
-        String dangertype = content.getString("dangertype").toLowerCase();
+        final String dangertype = content.getString("dangertype").toLowerCase();
 
         /* List of accepted danger types */
         switch(dangertype) {
@@ -90,9 +98,11 @@ public class JsonChecker {
     }
 
     /**
-     * Method that checks if the JSONObject has fields: areacode and phonenumber
-     * @param content JSONObject that contains the information for WarningMessage
-     * @return true if content has areacode and phonenumber, false otherwise
+     * Method that checks if the JSONObject has 
+     * two additional fields: areacode and phonenumber.
+     * @param content JSONObject, contains the information required for WarningMessage, 
+     * originally received from the client
+     * @return boolean, return true if content has areacode and phonenumber, false otherwise
      */
     public boolean checkJsonForAreaAndPhone(final JSONObject content) {
         System.out.println("Status: Checking if the WarningMessage has area code and phone number");
