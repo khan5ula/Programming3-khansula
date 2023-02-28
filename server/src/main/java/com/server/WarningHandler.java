@@ -66,27 +66,30 @@ public class WarningHandler implements HttpHandler {
                 code = 412;
             }
 
-            /* Check the content validity and parse the timestamp, if OK, add to database */
+            /* Check if the content has all required information */
             if (code == 0)
             if ((code = checkContentIsValid(content)) == 200) {
                 contentToJSON = new JSONObject(content);
 
-                try {
-                    /* Parse the timestamp content, will throw if invalid */
-                    final OffsetDateTime offsetTime = OffsetDateTime.parse(contentToJSON.getString("sent"));
-                    final LocalDateTime time = offsetTime.toLocalDateTime();  
-                    
-                    /* Add new message to the database, use a correct constructor depending on the received parameters */
-                    if (checkJsonForAreaAndPhone(contentToJSON)) {
-                        messageDatabase.setMessage(new WarningMessage(contentToJSON.getString("nickname"), contentToJSON.getDouble("latitude"), contentToJSON.getDouble("longitude"), contentToJSON.getString("dangertype"), time, contentToJSON.getString("areacode"), contentToJSON.getString("phonenumber")));
-                    } else {
-                        messageDatabase.setMessage(new WarningMessage(contentToJSON.getString("nickname"), contentToJSON.getDouble("latitude"), contentToJSON.getDouble("longitude"), contentToJSON.getString("dangertype"), time));
+                /* Check if the dangertype is in accepted format */
+                if ((code = checkDangertype(contentToJSON)) == 200) {
+                    try {
+                        /* Parse the timestamp content, will throw if invalid */
+                        final OffsetDateTime offsetTime = OffsetDateTime.parse(contentToJSON.getString("sent"));
+                        final LocalDateTime time = offsetTime.toLocalDateTime();  
+                        
+                        /* Add new message to the database, use a correct constructor depending on the received parameters */
+                        if (checkJsonForAreaAndPhone(contentToJSON)) {
+                            messageDatabase.setMessage(new WarningMessage(contentToJSON.getString("nickname"), contentToJSON.getDouble("latitude"), contentToJSON.getDouble("longitude"), contentToJSON.getString("dangertype"), time, contentToJSON.getString("areacode"), contentToJSON.getString("phonenumber")));
+                        } else {
+                            messageDatabase.setMessage(new WarningMessage(contentToJSON.getString("nickname"), contentToJSON.getDouble("latitude"), contentToJSON.getDouble("longitude"), contentToJSON.getString("dangertype"), time));
+                        }
+                    } catch (DateTimeException | JSONException | SQLException e) {
+                        code = 413;
+                        System.out.println("Error: Problem with message content: " + e.getMessage());
                     }
-                } catch (DateTimeException | JSONException | SQLException e) {
-                    code = 413;
-                    System.out.println("Error: Problem with message content: " + e.getMessage());
                 }
-            }
+            }        
 
             /* Done. Send response headers */
             System.out.println("Status: Got into end of POST; sending response");
@@ -150,6 +153,29 @@ public class WarningHandler implements HttpHandler {
         }
 
         System.out.println("Error: The content does not have all required information");  
+        return 413;
+    }
+    
+    /**
+     * Method that checks if the content's danger type contains accepted information
+     * Accepted danger types are:
+     * moose, reindeer, meteorite
+     * @param content the client's message in JSONObject format
+     * @return 200 if dangertype is OK, 413 if not
+     */
+    private int checkDangertype(final JSONObject content) {
+        String dangertype = content.getString("dangertype").toLowerCase();
+
+        /* List of accepted danger types */
+        switch(dangertype) {
+            case "moose":
+                return 200;
+            case "reindeer":
+                return 200;
+            case "meteorite":
+                return 200;
+        }
+
         return 413;
     }
 
