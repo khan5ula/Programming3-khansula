@@ -27,9 +27,7 @@ import com.sun.net.httpserver.HttpHandler;
  * send them to the client as a JSONArray
  */
 public class WarningHandler implements HttpHandler {
-    public WarningHandler() {
-        /* Empty default constructor */
-    }
+    public WarningHandler() {}
 
     /**
      * Handle method for the custom HttpHandler class.
@@ -81,8 +79,10 @@ public class WarningHandler implements HttpHandler {
                     if ((code = jsonChecker.checkDangertype(contentToJSON)) == 200) {
                         try {
                             /* Parse the timestamp content, will throw if invalid */
+                            System.out.println("Status: Trying to parse timestamp content from the message");
                             final OffsetDateTime offsetTime = OffsetDateTime.parse(contentToJSON.getString("sent"));
                             final LocalDateTime time = offsetTime.toLocalDateTime();  
+                            System.out.println("Success: Timestamp succesfully parsed");
                             
                             /* Add new message to the database, use a correct constructor depending on the received parameters */
                             if (jsonChecker.checkJsonForAreaAndPhone(contentToJSON)) {

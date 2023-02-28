@@ -27,7 +27,6 @@ public class UserAuthenticator extends BasicAuthenticator {
      * 
      * @param uname the username that the client provided
      * @param passwd the password that the client provided
-     * 
      * @return true if the credentials matched, false if not
      */
     @Override
@@ -47,9 +46,7 @@ public class UserAuthenticator extends BasicAuthenticator {
     /**
      * Method that checks if the given username is available.
      * If it is and the input is valid, add the new user to the list
-     * 
      * @param user the new user to be added as a JSONObject
-     * 
      * @return true if the database allows the user to be added,
      * false if not
      */

@@ -39,7 +39,6 @@ public class Server {
      * clients using a self-signed certificate for authentication.
      * 
      * @return A new SSLContext object for the server.
-     * 
      * @throws Exception if there is an error creating the SSLContext.
      */
     private static SSLContext serverSSLContext() throws Exception {
