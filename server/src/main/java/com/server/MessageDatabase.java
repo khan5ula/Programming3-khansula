@@ -139,6 +139,7 @@ public class MessageDatabase {
             "dangertype VARCHAR(255) NOT NULL," +
             "areacode INT," +
             "phonenumber VARCHAR (50)," +
+            "weather INT," +
             "PRIMARY KEY (sent, nickname))";
 
             final Statement createStatement = this.dbConnection.createStatement();
@@ -226,6 +227,8 @@ public class MessageDatabase {
         temp.append(message.getAreacode());
         temp.append("','");
         temp.append(message.getPhonenumber());
+        temp.append("','");
+        temp.append(message.getWeather());
         temp.append("')");
 
         final String setMessageString = temp.toString();
@@ -276,22 +279,25 @@ public class MessageDatabase {
             final ResultSet result = queryStatement.executeQuery("SELECT * FROM messages ORDER BY rowid");
     
             while (result.next()) {
+                WarningMessage msg = new WarningMessage(result.getString("nickname"), result.getDouble("latitude"), result.getDouble("longitude"), result.getString("dangertype"), WarningMessage.setSent(result.getLong("sent")));
+                jsonObject.put("sent", msg.getSent(ZoneOffset.UTC));
+                jsonObject.put("nickname", msg.getNickname());
+                jsonObject.put("latitude", msg.getLatitude());
+                jsonObject.put("longitude", msg.getLongitude());
+                jsonObject.put("dangertype", msg.getDangertype());
+
+                /* Check if the warningmessage has areacode and phonenumber */
                 if (result.getInt("areacode") > 0 && result.getString("phonenumber") != null) {
-                    final WarningMessage msg = new WarningMessage(result.getString("nickname"), result.getDouble("latitude"), result.getDouble("longitude"), result.getString("dangertype"), WarningMessage.setSent(result.getLong("sent")), result.getString("areacode"), result.getString("phonenumber"));
-                    jsonObject.put("sent", msg.getSent(ZoneOffset.UTC));
-                    jsonObject.put("nickname", msg.getNickname());
-                    jsonObject.put("latitude", msg.getLatitude());
-                    jsonObject.put("longitude", msg.getLongitude());
-                    jsonObject.put("dangertype", msg.getDangertype());
+                    msg.setAreacode(result.getString("areacode"));
+                    msg.setPhonenumber(result.getString("phonenumber"));
                     jsonObject.put("areacode", msg.getAreacode());
                     jsonObject.put("phonenumber", msg.getPhonenumber());
-                } else {
-                    final WarningMessage msg = new WarningMessage(result.getString("nickname"), result.getDouble("latitude"), result.getDouble("longitude"), result.getString("dangertype"), WarningMessage.setSent(result.getLong("sent")));
-                    jsonObject.put("sent", msg.getSent(ZoneOffset.UTC));
-                    jsonObject.put("nickname", msg.getNickname());
-                    jsonObject.put("latitude", msg.getLatitude());
-                    jsonObject.put("longitude", msg.getLongitude());
-                    jsonObject.put("dangertype", msg.getDangertype());
+                }
+
+                /* Check if the warningmessage has weather information */
+                if (result.getInt("weather") > -999) {
+                    msg.setWeather(result.getInt("weather"));
+                    jsonObject.put("weather", msg.getWeather() + " Celsius");
                 }
 
                 jsonArray.put(jsonObject);

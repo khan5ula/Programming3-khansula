@@ -83,13 +83,30 @@ public class WarningHandler implements HttpHandler {
                             final OffsetDateTime offsetTime = OffsetDateTime.parse(contentToJSON.getString("sent"));
                             final LocalDateTime time = offsetTime.toLocalDateTime();  
                             System.out.println("Success: Timestamp succesfully parsed");
-                            
-                            /* Add new message to the database, use a correct constructor depending on the received parameters */
+
+                            /* Create a new warning message based on information extracted from the JSON */
+                            WarningMessage newMessage = new WarningMessage(contentToJSON.getString("nickname"), contentToJSON.getDouble("latitude"), contentToJSON.getDouble("longitude"), contentToJSON.getString("dangertype"), time);
+
+                            /* If the JSON has phonenumber and areacode, add them to the message */
                             if (jsonChecker.checkJsonForAreaAndPhone(contentToJSON)) {
-                                messageDatabase.setMessage(new WarningMessage(contentToJSON.getString("nickname"), contentToJSON.getDouble("latitude"), contentToJSON.getDouble("longitude"), contentToJSON.getString("dangertype"), time, contentToJSON.getString("areacode"), contentToJSON.getString("phonenumber")));
-                            } else {
-                                messageDatabase.setMessage(new WarningMessage(contentToJSON.getString("nickname"), contentToJSON.getDouble("latitude"), contentToJSON.getDouble("longitude"), contentToJSON.getString("dangertype"), time));
+                                newMessage.setAreacode(contentToJSON.getString("areacode"));
+                                newMessage.setPhonenumber(contentToJSON.getString("phonenumber"));
                             }
+
+                            /* Check if contentToJSON has a field "weather". If it does, get the weather
+                            *  value from WeatherService API and add it to the message.
+                            */
+                            if (jsonChecker.checkJsonForWeather(contentToJSON)) {
+                                WeatherService weatherService = new WeatherService(contentToJSON.getDouble("latitude"), contentToJSON.getDouble("longitude"));
+                                weatherService.callWeatherAPI();
+                                newMessage.setWeather(weatherService.getTemperature());
+                            } else {
+                                newMessage.setWeather(-999);
+                            }
+
+                            /* Add the message to the database */
+                            messageDatabase.setMessage(newMessage);
+
                         } catch (DateTimeException | JSONException | SQLException e) {
                             code = 413;
                             System.out.println("Error: Problem with message content: " + e.getMessage());

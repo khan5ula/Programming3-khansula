@@ -101,8 +101,8 @@ public class JsonChecker {
      * Method that checks if the JSONObject has 
      * two additional fields: areacode and phonenumber.
      * @param content JSONObject, contains the information required for WarningMessage, 
-     * originally received from the client
-     * @return boolean, return true if content has areacode and phonenumber, false otherwise
+     * originally received from the client.
+     * @return boolean, return true if content has areacode and phonenumber, false otherwise.
      */
     public boolean checkJsonForAreaAndPhone(final JSONObject content) {
         System.out.println("Status: Checking if the WarningMessage has area code and phone number");
@@ -113,6 +113,22 @@ public class JsonChecker {
             }
         }
         System.out.println("Status: The message does not have both areacode and phone number");
+        return false;
+    }
+
+    /**
+     * Method that checks is the JSON contains a field "weather".
+     * @param content JSONObject, contains the information required for WarningMessage, 
+     * originally received from the client.
+     * @return boolean, true if "weather" was found, false if not.
+     */
+    public boolean checkJsonForWeather(final JSONObject content) {
+        System.out.println("Status: Checking if the WarningMessage requests weather");
+        if (content.has("weather")) {
+            System.out.println("Status: Weather request found");
+            return true;
+        }
+        System.out.println("Status: Weather request not found");
         return false;
     }
 }

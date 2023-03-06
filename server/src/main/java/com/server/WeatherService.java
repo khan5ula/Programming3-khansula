@@ -77,6 +77,10 @@ public class WeatherService {
         return this.temperature;
     }
 
+    public String getTemperatureString() {
+        return this.temperature + " Celsius";
+    }
+
     /**
      * Basic getter for the String filename class variable.
      * @return The filename of the file containing the XML
