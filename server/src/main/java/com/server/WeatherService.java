@@ -175,7 +175,7 @@ public class WeatherService {
 
         try {
             /* Build the command for curl */
-            String curlCommand = "curl -k -d @./weathercoordinates/" + this.filename + " http://localhost:4001/weather -k -H Content-Type:application/xml -v";
+            String curlCommand = "curl -k -d @./weathercoordinates/" + this.filename + " http://localhost:4001/weather -H Content-Type:application/xml -v";
 
             /* Execute the curl command as a separate process */
             Process process = Runtime.getRuntime().exec(curlCommand);
@@ -245,10 +245,5 @@ public class WeatherService {
         } else {
             System.out.println("Error: Filed to delete the XML file containing coordinates");
         }
-    }
-
-    public static void main(String[] args) {
-        WeatherService weatherService = new WeatherService(56.789, 67.789);
-        weatherService.callWeatherAPI();
     }
 }
