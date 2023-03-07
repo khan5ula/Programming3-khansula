@@ -68,7 +68,7 @@ public class WeatherService {
         }
 
         /* Delete the created XML since it is not needed any longer */
-        deleteXMLCoordinateFile();
+        //deleteXMLCoordinateFile();
     }
 
     /**
