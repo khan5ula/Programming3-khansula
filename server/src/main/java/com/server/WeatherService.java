@@ -154,7 +154,7 @@ public class WeatherService {
             TransformerFactory transformerFactory = TransformerFactory.newInstance();
             Transformer transformer = transformerFactory.newTransformer();
             DOMSource source = new DOMSource(document);
-            StreamResult result = new StreamResult(new File("weathercoordinates", this.filename));
+            StreamResult result = new StreamResult(new File(this.filename));
             transformer.transform(source, result);
             System.out.println("Success: File " + this.filename + " created");
             
@@ -175,7 +175,7 @@ public class WeatherService {
 
         try {
             /* Build the command for curl */
-            String curlCommand = "curl -k -d @./weathercoordinates/" + this.filename + " http://localhost:4001/weather -H Content-Type:application/xml -v";
+            String curlCommand = "curl -k -d @./" + this.filename + " http://localhost:4001/weather -k -H Content-Type:application/xml -v";
 
             /* Execute the curl command as a separate process */
             Process process = Runtime.getRuntime().exec(curlCommand);
