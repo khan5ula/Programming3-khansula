@@ -69,7 +69,7 @@ public class JsonChecker {
         }
 
         System.out.println("Error: The content does not have all required information");  
-        return 413;meteori
+        return 413;
     }
 
     /**
