@@ -4,13 +4,8 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.nio.file.Files;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.stream.Collectors;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -58,9 +53,8 @@ public class WeatherService {
      * This method handles the sequence of events required to communicate with the
      * Weather Service API in order to get the temperature information.
      * <p>Deletes the created XML coordinate file when the sequence is over.
-     * @throws IOException
      */
-    public void callWeatherAPI() throws IOException {
+    public void callWeatherAPI() {
         this.weatherResponse = sendWeatherCoordinates();
         if (weatherResponse != null) {
             if (weatherResponse.contains("weather")) {
@@ -175,36 +169,47 @@ public class WeatherService {
      * file that contains the coordinates.
      * <p>Uses that curl command to send the file to the Weather Service.
      * @return String that contains the response from the Weather Service.
-     * @throws IOException
      */
-    private String sendWeatherCoordinates() throws IOException {
+    private String sendWeatherCoordinates() {
         System.out.println("Status: Sending coordinates from file " + this.filename + " to the weather server");
 
-        URL url = new URL("http://localhost:4001/weather");
-        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-        connection.setRequestMethod("POST");
-        connection.setRequestProperty("Content-Type", "application/xml");
-        
-        // Send the request body
-        File file = new File(this.filename);
-        byte[] body = Files.readAllBytes(file.toPath());
-        connection.setDoOutput(true);
-        OutputStream outputStream = connection.getOutputStream();
-        outputStream.write(body);
-        outputStream.flush();
-        outputStream.close();
-        
-        // Read the response
-        int responseCode = connection.getResponseCode();
-        if (responseCode == HttpURLConnection.HTTP_OK) {
-            BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-            String response = reader.lines().collect(Collectors.joining());
+        try {
+            /* Build the command for curl */
+            String curlCommand = "curl -d @./" + this.filename + " http://localhost:4001/weather -k -H Content-Type:application/xml -v";
+
+            /* Execute the curl command as a separate process */
+            Process process = Runtime.getRuntime().exec(curlCommand);
+
+            /* Read the output of the process */
+            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            StringBuilder responseBuilder = new StringBuilder();
+            String line;
+            while ((line = reader.readLine()) != null) {
+                responseBuilder.append(line);
+            }
             reader.close();
-            return response;
-        } else {
-            System.out.println("Error: Failed to send weather coordinates to server. Response code: " + responseCode);
+
+            /* Wait for the process to finish */
+            int exitCode = process.waitFor();
+            if (exitCode == 0) {
+                System.out.println("Success: Weather coordinates sent to server");
+            } else {
+                System.out.println("Error: Failed to send weather coordinates to server");
+                System.out.println("^^^ Error occured while waiting for the runtime process to end");
+                return null;
+            }
+
+            /* Return the received response as a String */
+            return responseBuilder.toString();
+            
+        } catch (IOException | InterruptedException | NullPointerException e) {
+            System.out.println("Error: Failed to send weather coordinates to server");
+            e.printStackTrace();
             return null;
-        }    
+        } catch (Exception e) {
+            System.out.println("Error: Failed to send weather coordinates to server");
+            return null;
+        }
     }
 
     /**
