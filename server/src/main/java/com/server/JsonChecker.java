@@ -69,7 +69,7 @@ public class JsonChecker {
         }
 
         System.out.println("Error: The content does not have all required information");  
-        return 413;
+        return 413;meteori
     }
 
     /**
@@ -78,7 +78,6 @@ public class JsonChecker {
      * <ul>
      * <li>moose</li>
      * <li>reindeer</li>
-     * <li>meteorite</li>
      * </ul>
      * <p>The return value should be used as HTTP response code.
      * @param content JSONObject, from client
@@ -89,7 +88,7 @@ public class JsonChecker {
 
         /* List of accepted danger types */
         switch(dangertype) {
-            case "moose": case "reindeer": case "meteorite":
+            case "moose": case "reindeer":
                 System.out.println("Success: Proper danger type detected");
                 return 200;
         }

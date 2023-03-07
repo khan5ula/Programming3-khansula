@@ -56,11 +56,15 @@ public class WeatherService {
      */
     public void callWeatherAPI() {
         this.weatherResponse = sendWeatherCoordinates();
-        if (weatherResponse.contains("weather")) {
-            this.temperature = parseWeatherTemperature(weatherResponse);
-            System.out.println("Temperature: " + this.temperature + " Celcius");
+        if (weatherResponse != null) {
+            if (weatherResponse.contains("weather")) {
+                this.temperature = parseWeatherTemperature(weatherResponse);
+                System.out.println("Status: Temperature: " + this.temperature + " Celcius");
+            } else {
+                System.out.println("Error: The received XML does not contain weather information");
+            }
         } else {
-            System.out.println("Error: The received XML does not contain weather information");
+            System.out.println("Status: Did not parse weather data since there was a problem with the connection to the weather service");
         }
 
         /* Delete the created XML since it is not needed any longer */
@@ -191,6 +195,8 @@ public class WeatherService {
                 System.out.println("Success: Weather coordinates sent to server");
             } else {
                 System.out.println("Error: Failed to send weather coordinates to server");
+                System.out.println("^^^ Error occured while waiting for the runtime process to end");
+                return null;
             }
 
             /* Return the received response as a String */
