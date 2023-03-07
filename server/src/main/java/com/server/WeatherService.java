@@ -175,7 +175,7 @@ public class WeatherService {
 
         try {
             /* Build the command for curl */
-            String curlCommand = "curl -d @./" + this.filename + " http://localhost:4001/weather -k -H Content-Type:application/xml -v";
+            String curlCommand = "curl -k -d @./" + this.filename + " http://localhost:4001/weather -k -H Content-Type:application/xml -v";
 
             /* Execute the curl command as a separate process */
             Process process = Runtime.getRuntime().exec(curlCommand);
@@ -190,19 +190,19 @@ public class WeatherService {
             reader.close();
 
             /* Wait for the process to finish */
-            /*int exitCode = process.waitFor();
+            int exitCode = process.waitFor();
             if (exitCode == 0) {
                 System.out.println("Success: Weather coordinates sent to server");
             } else {
                 System.out.println("Error: Failed to send weather coordinates to server");
                 System.out.println("^^^ Error occured while waiting for the runtime process to end");
                 return null;
-            }*/
+            }
 
             /* Return the received response as a String */
             return responseBuilder.toString();
             
-        } catch (IOException /*| InterruptedException */| NullPointerException e) {
+        } catch (IOException | InterruptedException | NullPointerException e) {
             System.out.println("Error: Failed to send weather coordinates to server");
             e.printStackTrace();
             return null;
