@@ -200,8 +200,6 @@ public class MessageDatabase {
         }
     }
 
-    /* Method for inserting a message to database */
-
     /**
      * Method that inserts a new WarningMessage to the database.
      * <p>Creates a Insert into messages statement.
@@ -258,8 +256,6 @@ public class MessageDatabase {
 
         return count;
     }
-
-    /* Method for getting messages from the database */
 
     /**
      * Method for getting messages from the database.
@@ -364,8 +360,6 @@ public class MessageDatabase {
         return false;
     }
 
-    /* Method that checks if given username is in the database */
-
     /**
      * Method that checks if the given username is in the database.
      * <p>Creates a select username from users query.
@@ -396,8 +390,6 @@ public class MessageDatabase {
 
         return false;
     }
-
-    /* Method that checks if the given username/password combination can be found from database */
 
     /**
      * Method that authenticates the user by checking if the given credentials are proper.

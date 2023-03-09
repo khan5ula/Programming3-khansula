@@ -42,6 +42,13 @@ public class WeatherService {
      * @param longitude double containins longitude coordinates
      */
     public WeatherService(double latitude, double longitude) {
+        if (latitude < -90 || latitude > 90) {
+            throw new IllegalArgumentException("Error: Invalid latitude value: " + latitude);
+        }
+        if (longitude < -180 || longitude > 180) {
+            throw new IllegalArgumentException("Error: Invalid longitude value: " + longitude);
+        }
+        
         System.out.println("Status: Initializing WeatherService");
         this.latitude = latitude;
         this.longitude = longitude;
@@ -68,7 +75,7 @@ public class WeatherService {
         }
 
         /* Delete the created XML since it is not needed any longer */
-        //deleteXMLCoordinateFile();
+        deleteXMLCoordinateFile();
     }
 
     /**
@@ -81,6 +88,13 @@ public class WeatherService {
         return this.temperature;
     }
 
+    /**
+     * Basic getter for the temperature class variable.
+     * @return The class variable temperature
+     * as a String and adds phrase " Celsius" to the end.
+     * <p>The temperature variable is originally int.
+     * <p>Output example: "-4 Celsius"
+     */
     public String getTemperatureString() {
         return this.temperature + " Celsius";
     }
@@ -194,8 +208,7 @@ public class WeatherService {
             if (exitCode == 0) {
                 System.out.println("Success: Weather coordinates sent to server");
             } else {
-                System.out.println("Error: Failed to send weather coordinates to server");
-                System.out.println("^^^ Error occured while waiting for the runtime process to end");
+                System.out.println("Error: Something went wrong while waiting for the runtime process to end, coordinates were not sent");
                 return null;
             }
 
