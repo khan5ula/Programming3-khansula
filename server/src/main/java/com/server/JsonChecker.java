@@ -38,7 +38,7 @@ public class JsonChecker {
      */
     public int checkContentIsValid(final String content) {
         System.out.println("Status: Checking if the content has nickname, latitude, longitude, dangertype and sent");
-        System.out.println("Status: Also checking that latitude ang longitude are double");
+        System.out.println("Status: Also checking that latitude and longitude are double");
         
         final JSONObject contentToJSON = new JSONObject(content);
 

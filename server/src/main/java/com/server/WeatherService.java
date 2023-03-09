@@ -188,7 +188,7 @@ public class WeatherService {
      * <p>Uses that curl command to send the file to the Weather Service.
      * @return String that contains the response from the Weather Service.
      */
-    private String sendWeatherCoordinates() {
+    private synchronized String sendWeatherCoordinates() {
         System.out.println("Status: Sending coordinates from file " + this.filename + " to the weather server");
 
         try {
@@ -196,6 +196,7 @@ public class WeatherService {
             String curlCommand = "curl -k -d @./" + this.filename + " http://localhost:4001/weather -k -H Content-Type:application/xml -v";
 
             /* Execute the curl command as a separate process */
+            System.out.println("Status: Executing curl command: " + curlCommand);
             Process process = Runtime.getRuntime().exec(curlCommand);
 
             /* Read the output of the process */
@@ -220,11 +221,11 @@ public class WeatherService {
             return responseBuilder.toString();
             
         } catch (IOException | InterruptedException | NullPointerException e) {
-            System.out.println("Error: Failed to send weather coordinates to server");
+            System.out.println("Error: Failed to send weather coordinates to server: " + e.getMessage());
             e.printStackTrace();
             return null;
         } catch (Exception e) {
-            System.out.println("Error: Failed to send weather coordinates to server");
+            System.out.println("Error: Failed to send weather coordinates to server " + e.getMessage());
             return null;
         }
     }
