@@ -180,6 +180,14 @@ public class WeatherService {
             System.out.println("Error: XML file for weather coordinates could not be created");
             System.out.println(e.getMessage());
         }
+
+        /* Check whether the file exists */
+        File file = new File(this.filename);
+        if (file.isFile()) {
+            System.out.println("Success: File " + this.filename + " now exists");
+        } else {
+            System.out.println("Error: The file was not created succesfully since it can not be found");
+        }
     }
 
     /**
