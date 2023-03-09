@@ -97,9 +97,13 @@ public class WarningHandler implements HttpHandler {
                             *  value from WeatherService API and add it to the message.
                             */
                             if (jsonChecker.checkJsonForWeather(contentToJSON)) {
-                                WeatherService weatherService = new WeatherService(contentToJSON.getDouble("latitude"), contentToJSON.getDouble("longitude"));
-                                weatherService.callWeatherAPI();
-                                newMessage.setWeather(weatherService.getTemperature());
+                                try {
+                                    WeatherService weatherService = new WeatherService(contentToJSON.getDouble("latitude"), contentToJSON.getDouble("longitude"));
+                                    weatherService.callWeatherAPI();
+                                    newMessage.setWeather(weatherService.getTemperature());
+                                } catch (Exception e) {
+                                    System.out.println("Error: WarningHandler failed to use WeatherService: " + e.getMessage());
+                                }
                             } else {
                                 newMessage.setWeather(-999);
                             }

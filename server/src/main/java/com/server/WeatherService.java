@@ -49,11 +49,15 @@ public class WeatherService {
             throw new IllegalArgumentException("Error: Invalid longitude value: " + longitude);
         }
         
-        System.out.println("Status: Initializing WeatherService");
-        this.latitude = latitude;
-        this.longitude = longitude;
-        this.temperature = -999;
-        createWeatherCoordinatesFile();
+        try {
+            System.out.println("Status: Initializing WeatherService");
+            this.latitude = latitude;
+            this.longitude = longitude;
+            this.temperature = -999;
+            createWeatherCoordinatesFile();
+        } catch (Exception e) {
+            System.out.println("Error: Failed to initialize WeatherService: " + e.getMessage());
+        }
     }
 
     /**
