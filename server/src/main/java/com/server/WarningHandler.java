@@ -163,6 +163,7 @@ public class WarningHandler implements HttpHandler {
                         } catch (DateTimeException | JSONException | SQLException e) {
                             code = 413;
                             System.out.println("Error: Problem with message content: " + e.getMessage());
+                            exchangeObject.sendResponseHeaders(code, -1);
                         }
                     }
                 }        
