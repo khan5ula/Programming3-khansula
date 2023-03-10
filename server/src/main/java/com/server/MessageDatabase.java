@@ -329,13 +329,13 @@ public class MessageDatabase {
         }
 
         /* Hash the password with salt */
-        final byte bytes[] = new byte[13];
-        this.secureRandom.nextBytes(bytes);
-        final String saltBytes = new String(Base64.getEncoder().encode(bytes));
-        final String salt = "$6$" + saltBytes;
-        final String hashedPassword = Crypt.crypt(user.getString("password"), salt);      
-
         try {
+            final byte bytes[] = new byte[13];
+            this.secureRandom.nextBytes(bytes);
+            final String saltBytes = new String(Base64.getEncoder().encode(bytes));
+            final String salt = "$6$" + saltBytes;
+            final String hashedPassword = Crypt.crypt(user.getString("password"), salt);      
+
             final StringBuilder temp = new StringBuilder("insert into users ");
             temp.append("VALUES('");
             temp.append(user.getString("username"));
@@ -353,7 +353,7 @@ public class MessageDatabase {
             
             return true;       
         } catch (final Exception e) {
-            System.out.println("Error occured in MessageDatabase.setUser(): " + e.getMessage());
+            System.out.println("Error: MessageDatabase.setUser failed: " + e.getMessage());
         }
 
         System.out.println("Error: setUser() failed");

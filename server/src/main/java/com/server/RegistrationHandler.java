@@ -78,9 +78,8 @@ public class RegistrationHandler implements HttpHandler {
                         }
                     }
                 } catch (Exception e) {
-                    System.out.println("Error during JSON parsing");
+                    System.out.println("Error: User JSON parsing failed: " + e.getMessage());
                     code = 500;
-                    e.getMessage();
                 }  
             }
         }
