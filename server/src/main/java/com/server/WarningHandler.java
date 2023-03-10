@@ -66,18 +66,41 @@ public class WarningHandler implements HttpHandler {
             }
 
             /* Make sure the content is proper JSON */
-            if (code == 0 && !jsonChecker.isJSONValid(content)) {
-                code = 400;
-            }
-
-            /* Check if the content has query element */
-            if ((contentToJSON = new JSONObject(content)).has("query") && code == 0) {
-                System.out.println("Status: WarningHandler detected that the received content is a Query instead of WarningMessage");
-                if (jsonChecker.getQueryType(contentToJSON) == "user") {
-                    if (jsonChecker.checkUserQueryValidity(contentToJSON)) {
-                        UserQuery userQuery = new UserQuery(contentToJSON.getString("nickname"));
+            if (code == 0 && jsonChecker.isJSONValid(content)) {
+                contentToJSON = new JSONObject(content);
+                /* Check if the content has query element */
+                if (contentToJSON.has("query")) {
+                    System.out.println("Status: WarningHandler detected that the received content is a Query instead of WarningMessage");
+                    if (jsonChecker.getQueryType(contentToJSON) == "user") {
+                        if (jsonChecker.checkUserQueryValidity(contentToJSON)) {
+                            UserQuery userQuery = new UserQuery(contentToJSON.getString("nickname"));
+                            try {
+                                JSONArray responseArray = messageDatabase.getMessagesByUser(userQuery.getNickname());
+                                String responseString = responseArray.toString();
+                                code = 200;
+                                bytes = responseString.getBytes("UTF-8");
+                                System.out.println("Status: Sending GET response");
+                                exchangeObject.sendResponseHeaders(code, bytes.length);
+                                final OutputStream outputStream = exchangeObject.getResponseBody();
+                                outputStream.write(bytes);
+                                outputStream.flush();
+                                outputStream.close();
+                            } catch (JSONException e) {
+                                // TODO Auto-generated catch block
+                                e.printStackTrace();
+                            } catch (SQLException e) {
+                                // TODO Auto-generated catch block
+                                e.printStackTrace();
+                            }
+                        }
+                    } else if (jsonChecker.getQueryType(contentToJSON) == "time") {
                         try {
-                            JSONArray responseArray = messageDatabase.getMessagesByUser(userQuery.getNickname());
+                            OffsetDateTime offsetTime = OffsetDateTime.parse(contentToJSON.getString("timestart"));
+                            final LocalDateTime timeStart = offsetTime.toLocalDateTime();  
+                            offsetTime = OffsetDateTime.parse(contentToJSON.getString("timeend"));
+                            final LocalDateTime timeEnd = offsetTime.toLocalDateTime();
+                            TimeQuery timeQuery = new TimeQuery(timeStart, timeEnd);
+                            JSONArray responseArray = messageDatabase.getMessagesByTimeInterval(timeQuery.timeStartAsInt(), timeQuery.timeEndAsInt());
                             String responseString = responseArray.toString();
                             code = 200;
                             bytes = responseString.getBytes("UTF-8");
@@ -87,86 +110,64 @@ public class WarningHandler implements HttpHandler {
                             outputStream.write(bytes);
                             outputStream.flush();
                             outputStream.close();
-                        } catch (JSONException e) {
-                            // TODO Auto-generated catch block
-                            e.printStackTrace();
-                        } catch (SQLException e) {
-                            // TODO Auto-generated catch block
-                            e.printStackTrace();
+                        } catch (Exception e) {
+                            // TODO: handle exception
                         }
+                    
+                    } else {
+                        code = 412;
                     }
-                } else if (jsonChecker.getQueryType(contentToJSON) == "time") {
-                    try {
-                        OffsetDateTime offsetTime = OffsetDateTime.parse(contentToJSON.getString("timestart"));
-                        final LocalDateTime timeStart = offsetTime.toLocalDateTime();  
-                        offsetTime = OffsetDateTime.parse(contentToJSON.getString("timeend"));
-                        final LocalDateTime timeEnd = offsetTime.toLocalDateTime();
-                        TimeQuery timeQuery = new TimeQuery(timeStart, timeEnd);
-                        JSONArray responseArray = messageDatabase.getMessagesByTimeInterval(timeQuery.timeStartAsInt(), timeQuery.timeEndAsInt());
-                        String responseString = responseArray.toString();
-                        code = 200;
-                        bytes = responseString.getBytes("UTF-8");
-                        System.out.println("Status: Sending GET response");
-                        exchangeObject.sendResponseHeaders(code, bytes.length);
-                        final OutputStream outputStream = exchangeObject.getResponseBody();
-                        outputStream.write(bytes);
-                        outputStream.flush();
-                        outputStream.close();
-                    } catch (Exception e) {
-                        // TODO: handle exception
-                    }
-                
-                } else {
-                    code = 412;
-                }
-            /* The message was not a query. Check if the content has all required information */
-            } else if (code == 0) {
-                if ((code = jsonChecker.checkWarningIsValid(content)) == 200) {
-                    contentToJSON = new JSONObject(content);
-    
-                    /* Check if the dangertype is in accepted format */
-                    if ((code = jsonChecker.checkDangertype(contentToJSON)) == 200) {
-                        try {
-                            /* Parse the timestamp content, will throw if invalid */
-                            System.out.println("Status: Trying to parse timestamp content from the message");
-                            final OffsetDateTime offsetTime = OffsetDateTime.parse(contentToJSON.getString("sent"));
-                            final LocalDateTime time = offsetTime.toLocalDateTime();  
-                            System.out.println("Success: Timestamp succesfully parsed");
+                /* The message was not a query. Check if the content has all required information */
+                } else if (code == 0) {
+                    if ((code = jsonChecker.checkWarningIsValid(content)) == 200) {
+                        contentToJSON = new JSONObject(content);
+        
+                        /* Check if the dangertype is in accepted format */
+                        if ((code = jsonChecker.checkDangertype(contentToJSON)) == 200) {
+                            try {
+                                /* Parse the timestamp content, will throw if invalid */
+                                System.out.println("Status: Trying to parse timestamp content from the message");
+                                final OffsetDateTime offsetTime = OffsetDateTime.parse(contentToJSON.getString("sent"));
+                                final LocalDateTime time = offsetTime.toLocalDateTime();  
+                                System.out.println("Success: Timestamp succesfully parsed");
 
-                            /* Create a new warning message based on information extracted from the JSON */
-                            WarningMessage newMessage = new WarningMessage(contentToJSON.getString("nickname"), contentToJSON.getDouble("latitude"), contentToJSON.getDouble("longitude"), contentToJSON.getString("dangertype"), time);
+                                /* Create a new warning message based on information extracted from the JSON */
+                                WarningMessage newMessage = new WarningMessage(contentToJSON.getString("nickname"), contentToJSON.getDouble("latitude"), contentToJSON.getDouble("longitude"), contentToJSON.getString("dangertype"), time);
 
-                            /* If the JSON has phonenumber and areacode, add them to the message */
-                            if (jsonChecker.checkJsonForAreaAndPhone(contentToJSON)) {
-                                newMessage.setAreacode(contentToJSON.getString("areacode"));
-                                newMessage.setPhonenumber(contentToJSON.getString("phonenumber"));
-                            }
-
-                            /* Check if contentToJSON has a field "weather". If it does, get the weather
-                            *  value from WeatherService API and add it to the message.
-                            */
-                            if (jsonChecker.checkJsonForWeather(contentToJSON)) {
-                                try {
-                                    WeatherService weatherService = new WeatherService(contentToJSON.getDouble("latitude"), contentToJSON.getDouble("longitude"));
-                                    weatherService.callWeatherAPI();
-                                    newMessage.setWeather(weatherService.getTemperature());
-                                } catch (Exception e) {
-                                    System.out.println("Error: WarningHandler failed to use WeatherService: " + e.getMessage());
+                                /* If the JSON has phonenumber and areacode, add them to the message */
+                                if (jsonChecker.checkJsonForAreaAndPhone(contentToJSON)) {
+                                    newMessage.setAreacode(contentToJSON.getString("areacode"));
+                                    newMessage.setPhonenumber(contentToJSON.getString("phonenumber"));
                                 }
-                            } else {
-                                newMessage.setWeather(-999);
+
+                                /* Check if contentToJSON has a field "weather". If it does, get the weather
+                                *  value from WeatherService API and add it to the message.
+                                */
+                                if (jsonChecker.checkJsonForWeather(contentToJSON)) {
+                                    try {
+                                        WeatherService weatherService = new WeatherService(contentToJSON.getDouble("latitude"), contentToJSON.getDouble("longitude"));
+                                        weatherService.callWeatherAPI();
+                                        newMessage.setWeather(weatherService.getTemperature());
+                                    } catch (Exception e) {
+                                        System.out.println("Error: WarningHandler failed to use WeatherService: " + e.getMessage());
+                                    }
+                                } else {
+                                    newMessage.setWeather(-999);
+                                }
+
+                                /* Add the message to the database */
+                                messageDatabase.setMessage(newMessage);
+
+                            } catch (DateTimeException | JSONException | SQLException e) {
+                                code = 500;
+                                System.out.println("Error: Problem with message content: " + e.getMessage());
+                                exchangeObject.sendResponseHeaders(code, -1);
                             }
-
-                            /* Add the message to the database */
-                            messageDatabase.setMessage(newMessage);
-
-                        } catch (DateTimeException | JSONException | SQLException e) {
-                            code = 409;
-                            System.out.println("Error: Problem with message content: " + e.getMessage());
-                            exchangeObject.sendResponseHeaders(code, -1);
                         }
-                    }
-                }        
+                    }        
+                }
+            } else {
+                code = 400;
             }
 
             /* Done. Send response headers */
