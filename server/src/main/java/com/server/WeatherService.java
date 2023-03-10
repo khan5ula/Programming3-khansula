@@ -201,7 +201,7 @@ public class WeatherService {
 
         try {
             /* Build the command for curl */
-            String curlCommand = "curl -k -d @./" + this.filename + " http://localhost:4001/weather -k -H Content-Type:application/xml -v";
+            String curlCommand = "curl -k -d @./" + this.filename + " https://localhost:4001/weather -k -H Content-Type:application/xml -v";
 
             /* Execute the curl command as a separate process */
             System.out.println("Status: Executing curl command: " + curlCommand);
