@@ -4,6 +4,7 @@ import java.io.File;
 import java.security.SecureRandom;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -12,6 +13,7 @@ import java.util.Base64;
 
 import org.apache.commons.codec.digest.Crypt;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 /* Class that wraps all database related methods */
@@ -305,6 +307,94 @@ public class MessageDatabase {
         return jsonArray;
     }
 
+    public JSONArray getMessagesByUser(String nickname) throws JSONException, SQLException {
+        System.out.println("Status: Getting messages with nickname: " + nickname);
+
+        JSONObject jsonObject = new JSONObject();
+        final JSONArray jsonArray = new JSONArray();
+
+        if (checkIfThereAreMessages() > 0) {
+            final String queryPrompt =
+            "SELECT * FROM messages WHERE nickname = ?";
+            final PreparedStatement queryStatement = this.dbConnection.prepareStatement(queryPrompt);
+            queryStatement.setString(1, nickname);
+            final ResultSet result = queryStatement.executeQuery(); 
+
+            while (result.next()) {
+                WarningMessage msg = new WarningMessage(result.getString("nickname"), result.getDouble("latitude"), result.getDouble("longitude"), result.getString("dangertype"), WarningMessage.setSent(result.getLong("sent")));
+                jsonObject.put("sent", msg.getSent(ZoneOffset.UTC));
+                jsonObject.put("nickname", msg.getNickname());
+                jsonObject.put("latitude", msg.getLatitude());
+                jsonObject.put("longitude", msg.getLongitude());
+                jsonObject.put("dangertype", msg.getDangertype());
+
+                /* Check if the warningmessage has areacode and phonenumber */
+                if (result.getInt("areacode") > 0 && result.getString("phonenumber") != null) {
+                    msg.setAreacode(result.getString("areacode"));
+                    msg.setPhonenumber(result.getString("phonenumber"));
+                    jsonObject.put("areacode", msg.getAreacode());
+                    jsonObject.put("phonenumber", msg.getPhonenumber());
+                }
+
+                /* Check if the warningmessage has weather information */
+                if (result.getInt("weather") > -999) {
+                    msg.setWeather(result.getInt("weather"));
+                    jsonObject.put("weather", msg.getWeather() + " Celsius");
+                }
+
+                jsonArray.put(jsonObject);
+                // Initialize empty object for next round
+                jsonObject = new JSONObject();
+            }
+        }
+
+        return jsonArray;
+    }
+
+    public JSONArray getMessagesByTimeInterval(long timeStart, long timeEnd) throws JSONException, SQLException {
+        System.out.println("Status: Getting messages with a time interval");
+
+        JSONObject jsonObject = new JSONObject();
+        final JSONArray jsonArray = new JSONArray();
+
+        if (checkIfThereAreMessages() > 0) {
+            final String queryPrompt =
+            "SELECT * FROM messages WHERE sent >= ? AND sent <= ?";
+            final PreparedStatement queryStatement = this.dbConnection.prepareStatement(queryPrompt);
+            queryStatement.setLong(1, timeStart);
+            queryStatement.setLong(2, timeEnd);
+            final ResultSet result = queryStatement.executeQuery();
+
+            while (result.next()) {
+                WarningMessage msg = new WarningMessage(result.getString("nickname"), result.getDouble("latitude"), result.getDouble("longitude"), result.getString("dangertype"), WarningMessage.setSent(result.getLong("sent")));
+                jsonObject.put("sent", msg.getSent(ZoneOffset.UTC));
+                jsonObject.put("nickname", msg.getNickname());
+                jsonObject.put("latitude", msg.getLatitude());
+                jsonObject.put("longitude", msg.getLongitude());
+                jsonObject.put("dangertype", msg.getDangertype());
+
+                /* Check if the warningmessage has areacode and phonenumber */
+                if (result.getInt("areacode") > 0 && result.getString("phonenumber") != null) {
+                    msg.setAreacode(result.getString("areacode"));
+                    msg.setPhonenumber(result.getString("phonenumber"));
+                    jsonObject.put("areacode", msg.getAreacode());
+                    jsonObject.put("phonenumber", msg.getPhonenumber());
+                }
+
+                /* Check if the warningmessage has weather information */
+                if (result.getInt("weather") > -999) {
+                    msg.setWeather(result.getInt("weather"));
+                    jsonObject.put("weather", msg.getWeather() + " Celsius");
+                }
+
+                jsonArray.put(jsonObject);
+                // Initialize empty object for next round
+                jsonObject = new JSONObject();
+            }
+        }
+
+        return jsonArray;
+    }
     /**
      * Method that puts a new user to the database.
      * <p>Creates Insert into users statement.

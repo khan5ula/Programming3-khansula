@@ -70,9 +70,58 @@ public class WarningHandler implements HttpHandler {
                 code = 400;
             }
 
-            /* Check if the content has all required information */
-            if (code == 0) {
-                if ((code = jsonChecker.checkContentIsValid(content)) == 200) {
+            /* Check if the content has query element */
+            if ((contentToJSON = new JSONObject(content)).has("query") && code == 0) {
+                System.out.println("Status: WarningHandler detected that the received content is a Query instead of WarningMessage");
+                if (jsonChecker.getQueryType(contentToJSON) == "user") {
+                    if (jsonChecker.checkUserQueryValidity(contentToJSON)) {
+                        UserQuery userQuery = new UserQuery(contentToJSON.getString("nickname"));
+                        try {
+                            JSONArray responseArray = messageDatabase.getMessagesByUser(userQuery.getNickname());
+                            String responseString = responseArray.toString();
+                            code = 200;
+                            bytes = responseString.getBytes("UTF-8");
+                            System.out.println("Status: Sending GET response");
+                            exchangeObject.sendResponseHeaders(code, bytes.length);
+                            final OutputStream outputStream = exchangeObject.getResponseBody();
+                            outputStream.write(bytes);
+                            outputStream.flush();
+                            outputStream.close();
+                        } catch (JSONException e) {
+                            // TODO Auto-generated catch block
+                            e.printStackTrace();
+                        } catch (SQLException e) {
+                            // TODO Auto-generated catch block
+                            e.printStackTrace();
+                        }
+                    }
+                } else if (jsonChecker.getQueryType(contentToJSON) == "time") {
+                    try {
+                        OffsetDateTime offsetTime = OffsetDateTime.parse(contentToJSON.getString("timestart"));
+                        final LocalDateTime timeStart = offsetTime.toLocalDateTime();  
+                        offsetTime = OffsetDateTime.parse(contentToJSON.getString("timeend"));
+                        final LocalDateTime timeEnd = offsetTime.toLocalDateTime();
+                        TimeQuery timeQuery = new TimeQuery(timeStart, timeEnd);
+                        JSONArray responseArray = messageDatabase.getMessagesByTimeInterval(timeQuery.timeStartAsInt(), timeQuery.timeEndAsInt());
+                        String responseString = responseArray.toString();
+                        code = 200;
+                        bytes = responseString.getBytes("UTF-8");
+                        System.out.println("Status: Sending GET response");
+                        exchangeObject.sendResponseHeaders(code, bytes.length);
+                        final OutputStream outputStream = exchangeObject.getResponseBody();
+                        outputStream.write(bytes);
+                        outputStream.flush();
+                        outputStream.close();
+                    } catch (Exception e) {
+                        // TODO: handle exception
+                    }
+                
+                } else {
+                    code = 412;
+                }
+            /* The message was not a query. Check if the content has all required information */
+            } else if (code == 0) {
+                if ((code = jsonChecker.checkWarningIsValid(content)) == 200) {
                     contentToJSON = new JSONObject(content);
     
                     /* Check if the dangertype is in accepted format */

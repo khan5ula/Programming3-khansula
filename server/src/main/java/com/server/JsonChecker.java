@@ -4,7 +4,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 /**
- * Helper class for WarningHandler to check that the
+ * Helper class for POST Handlers to check that the
  * content it receives is valid
  */
 public class JsonChecker {
@@ -36,7 +36,7 @@ public class JsonChecker {
      * @param content String received from the client with InputStream
      * @return int, 200 if all fields are OK, 413 if not
      */
-    public int checkContentIsValid(final String content) {
+    public int checkWarningIsValid(final String content) {
         System.out.println("Status: Checking if the content has nickname, latitude, longitude, dangertype and sent");
         System.out.println("Status: Also checking that latitude and longitude are double");
         
@@ -128,6 +128,32 @@ public class JsonChecker {
             return true;
         }
         System.out.println("Status: Weather request not found");
+        return false;
+    }
+
+    public String getQueryType(final JSONObject content) {
+        System.out.println("Status: Checking the query JSON for query type");
+        if (content.get("query").toString().equals("user")) {
+            System.out.println("Success: Found query type: " + "user");
+            return "user";
+        } else if (content.get("query").toString().equals("time")) {
+            System.out.println("Success: Found query type: " + "time");
+            return "time";
+        } else {
+            System.out.println("Error: No valid query type found");
+            return "invalid";
+        }
+    }
+
+    public boolean checkUserQueryValidity(final JSONObject content) {
+        System.out.println("Status: Checking the validity of User Query");
+        if (content.has("nickname")) {
+            if (content.getString("nickname") != null) {
+                System.out.println("Success: User Query contains valid information");
+                return true;
+            }
+        }
+        System.out.println("Error: Empty content on User Query");
         return false;
     }
 }

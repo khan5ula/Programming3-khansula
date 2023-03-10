@@ -81,9 +81,11 @@ public class Server {
             /* Create User Authenticator instance */
             UserAuthenticator userAuthenticator = new UserAuthenticator();
 
-            /* Create context for warning and registration services*/
-            HttpContext httpContext = server.createContext("/warning", new WarningHandler());
-            httpContext.setAuthenticator(userAuthenticator);
+            /* Create context for Warning Handler */
+            HttpContext warningContext = server.createContext("/warning", new WarningHandler());
+            warningContext.setAuthenticator(userAuthenticator);
+
+            /* Create context for Registration Handler */
             server.createContext("/registration", new RegistrationHandler());
 
             /* Enable support for multi-threading and start the server */
