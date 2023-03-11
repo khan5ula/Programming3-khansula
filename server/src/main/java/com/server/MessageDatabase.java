@@ -307,6 +307,13 @@ public class MessageDatabase {
         return jsonArray;
     }
 
+    /**
+     * Method that gets the messages with the requested nickname from the database.
+     * @param nickname String, the nickname used for the query
+     * @return JSONArray, containing the messages posted by the requested nickname
+     * @throws JSONException
+     * @throws SQLException
+     */
     public JSONArray getMessagesByUser(String nickname) throws JSONException, SQLException {
         System.out.println("Status: Getting messages with nickname: " + nickname);
 
@@ -351,6 +358,14 @@ public class MessageDatabase {
         return jsonArray;
     }
 
+    /**
+     * Method that gets messages posted in a certain time interval from the database.
+     * @param timeStart long, the start date/time in Unix time format
+     * @param timeEnd long, the end date/time in Unix time format
+     * @return JSONArray, containing the messages posted in the requested time interval
+     * @throws JSONException
+     * @throws SQLException
+     */
     public JSONArray getMessagesByTimeInterval(long timeStart, long timeEnd) throws JSONException, SQLException {
         System.out.println("Status: Getting messages with a time interval");
 
@@ -395,6 +410,7 @@ public class MessageDatabase {
 
         return jsonArray;
     }
+    
     /**
      * Method that puts a new user to the database.
      * <p>Creates Insert into users statement.

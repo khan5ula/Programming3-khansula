@@ -34,42 +34,82 @@ public class WarningMessage {
         this.sent = sent;
     }
 
+    /**
+     * Setter for the class variable nickname.
+     * @param nickname String, nickname that will be set to the class variable nickname.
+     */
     public void setNick(String nickname) {
         this.nickname = nickname;
     }
 
+    /**
+     * Setter for the class variable latitude.
+     * @param latitude double, value that will be set to the class variable latitude.
+     */
     public void setLatitude(double latitude) {
         this.latitude = latitude;
     }
 
+    /**
+     * Setter for the class variable longitude.
+     * @param longitude double, value that will be set to the class variable longitude.
+     */
     public void setLongitude(double longitude) {
         this.longitude = longitude;
     }
 
+    /**
+     * Setter for the class variable dangerString.
+     * @param dangerString String, value that will be set to the class variable dangerString.
+     */
     public void setDangertype(String dangerString) {
         this.dangertype = dangerString;
     }
 
+    /**
+     * Getter for the class variable nickname.
+     * @return String, the class variable nickname.
+     */
     public String getNickname() {
         return this.nickname;
     }
 
+    /**
+     * Getter for the class variable latitude.
+     * @return double, the class variable latitude.
+     */
     public double getLatitude() {
         return this.latitude;
     }
 
+    /**
+     * Getter for the class variable longitude.
+     * @return double, the class variable longitude.
+     */
     public double getLongitude() {
         return this.longitude;
     }
 
+    /**
+     * Getter for the class variable dangertype.
+     * @return String, the class variable dangertype.
+     */
     public String getDangertype() {
         return this.dangertype;
     }
 
+    /**
+     * Setter for the class variable weather.
+     * @param weather int, the class variable weather.
+     */
     public void setWeather(int weather) {
         this.weather = weather;
     }
 
+    /**
+     * Getter for the class variable weather.
+     * @return int, the class variable weather.
+     */
     public int getWeather() {
         return this.weather;
     }
@@ -102,18 +142,34 @@ public class WarningMessage {
         return LocalDateTime.ofInstant(Instant.ofEpochMilli(epoch), ZoneOffset.UTC);
     }
 
+    /**
+     * Setter for the class variable areacode.
+     * @param areacode String, value that will be set to the class variable areacode.
+     */
     public void setAreacode(String areacode) {
         this.areacode = areacode;
     }
 
+    /**
+     * Setter for the class variable phonenumber.
+     * @param phonenumber String, value that will be set to the class variable phonenumber.
+     */
     public void setPhonenumber(String phonenumber) {
         this.phonenumber = phonenumber;
     }
 
+    /**
+     * Getter for the class variable areacode.
+     * @return String, the class variable areacode.
+     */
     public String getAreacode() {
         return areacode;
     }
 
+    /**
+     * Getter for the class variable phonenumber.
+     * @return the class variable phonenumber.
+     */
     public String getPhonenumber() {
         return phonenumber;
     }

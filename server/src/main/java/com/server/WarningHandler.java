@@ -42,6 +42,7 @@ public class WarningHandler implements HttpHandler {
         byte [] bytes = null;
         final MessageDatabase messageDatabase = MessageDatabase.getInstance();
         final JsonChecker jsonChecker = new JsonChecker();
+        boolean status = false;
 
         System.out.println("Status: Request handled in thread " + Thread.currentThread().getId());
 
@@ -68,9 +69,12 @@ public class WarningHandler implements HttpHandler {
             /* Make sure the content is proper JSON */
             if (code == 0 && jsonChecker.isJSONValid(content)) {
                 contentToJSON = new JSONObject(content);
+
                 /* Check if the content has query element */
                 if (contentToJSON.has("query")) {
                     System.out.println("Status: WarningHandler detected that the received content is a Query instead of WarningMessage");
+                    
+                    /* Check whether the query is of type "user" or "time", other types are not accepted */
                     if (jsonChecker.getQueryType(contentToJSON) == "user") {
                         if (jsonChecker.checkUserQueryValidity(contentToJSON)) {
                             UserQuery userQuery = new UserQuery(contentToJSON.getString("nickname"));
@@ -79,7 +83,7 @@ public class WarningHandler implements HttpHandler {
                                 String responseString = responseArray.toString();
                                 code = 200;
                                 bytes = responseString.getBytes("UTF-8");
-                                sendResponse(code, bytes, exchangeObject);
+                                status = sendResponse(code, bytes, exchangeObject);
                             } catch (Exception e) {
                                 System.out.println("Error: Query handler failed: " + e.getMessage());
                             }
@@ -95,13 +99,15 @@ public class WarningHandler implements HttpHandler {
                             String responseString = responseArray.toString();
                             code = 200;
                             bytes = responseString.getBytes("UTF-8");
-                            sendResponse(code, bytes, exchangeObject);
+                            status = sendResponse(code, bytes, exchangeObject);
                         } catch (Exception e) {
                             System.out.println("Error: Query handler failed: " + e.getMessage());
                         }
                     } else {
+                        System.out.println("Error: The received query was not 'user' or 'time'");
                         code = 412;
                     }
+
                 /* The message was not a query. Check if the content has all required information */
                 } else if (code == 0) {
                     if ((code = jsonChecker.checkWarningIsValid(content)) == 200) {
@@ -110,6 +116,7 @@ public class WarningHandler implements HttpHandler {
                         /* Check if the dangertype is in accepted format */
                         if ((code = jsonChecker.checkDangertype(contentToJSON)) == 200) {
                             try {
+
                                 /* Parse the timestamp content, will throw if invalid */
                                 System.out.println("Status: Trying to parse timestamp content from the message");
                                 final OffsetDateTime offsetTime = OffsetDateTime.parse(contentToJSON.getString("sent"));
@@ -162,15 +169,13 @@ public class WarningHandler implements HttpHandler {
         /* Handle GET case */
         } else if (exchangeObject.getRequestMethod().equalsIgnoreCase("GET")) {
             try {
-                JSONArray responseArray;
-                String responseString;
-                responseArray = messageDatabase.getMessages();
-                responseString = responseArray.toString();
+                JSONArray responseArray = messageDatabase.getMessages();
+                String responseString = responseArray.toString();
 
                 /* Send the response */
                 code = 200;
                 bytes = responseString.getBytes("UTF-8");
-                sendResponse(code, bytes, exchangeObject);
+                status = sendResponse(code, bytes, exchangeObject);
             } catch (final Exception e) {
                 System.out.println("Error occured while getting messages: " + e.getMessage());
             }
@@ -179,18 +184,26 @@ public class WarningHandler implements HttpHandler {
         } else {
             final String responseString = "Error: Requested function is not supported";
             bytes = responseString.getBytes("UTF-8");
-            exchangeObject.sendResponseHeaders(400, bytes.length);
-            final OutputStream outputStream = exchangeObject.getResponseBody();
-            outputStream.write(bytes);
+            status = sendResponse(400, bytes, exchangeObject);
+        }
 
-            /* Done, clean the output stream */
-            outputStream.flush();
-            outputStream.close();
+        /* Close the handle method and print the outcome of the process */
+        if (status) {
+            System.out.println("Success: WarningHandler is done. Closing the handling process.");
+        } else {
+            System.out.println("Failure: WarningHandler is done, but the operation failed. Closing the handling process.");
         }
     }
 
+    /**
+     * A method that wraps the functionality of sending HTTP Exchange response.
+     * @param code int, the response code that will be sent to client
+     * @param bytes byte[], contains bytes of the content that will be sent to client
+     * @param exchangeObject HttpExchange, the exchange object formed with the client
+     * @return true if succeeds, false if fails
+     */
     private boolean sendResponse(int code, byte [] bytes, HttpExchange exchangeObject) {
-        System.out.println("Status: Sending GET response");
+        System.out.println("Status: Sending HTTP response");
 
         try {
             exchangeObject.sendResponseHeaders(code, bytes.length);

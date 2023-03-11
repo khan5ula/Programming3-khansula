@@ -23,15 +23,26 @@ public class User {
         this.email = email;
     }
 
-    /* Basic getters */
+    /**
+     * Getter for the class variable username.
+     * @return String, the class variable username.
+     */
     public String getUsername() {
         return this.username;
     }
 
+    /**
+     * Getter for the class variable password.
+     * @return String, the class variable password.
+     */
     public String getPassword() {
         return this.password;
     }
 
+    /**
+     * Getter for the class variable email.
+     * @return String, the class variable email.
+     */
     public String getEmail() {
         return this.email;
     }

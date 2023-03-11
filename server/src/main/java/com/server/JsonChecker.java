@@ -145,6 +145,12 @@ public class JsonChecker {
         }
     }
 
+    /**
+     * Method that checks whether the User Query contains field 'nickname'
+     * and that it is not null.
+     * @param content JSONObject, the Query as JSON
+     * @return boolean, true if content is ok, false if not
+     */
     public boolean checkUserQueryValidity(final JSONObject content) {
         System.out.println("Status: Checking the validity of User Query");
         if (content.has("nickname")) {
