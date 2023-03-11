@@ -79,18 +79,9 @@ public class WarningHandler implements HttpHandler {
                                 String responseString = responseArray.toString();
                                 code = 200;
                                 bytes = responseString.getBytes("UTF-8");
-                                System.out.println("Status: Sending GET response");
-                                exchangeObject.sendResponseHeaders(code, bytes.length);
-                                final OutputStream outputStream = exchangeObject.getResponseBody();
-                                outputStream.write(bytes);
-                                outputStream.flush();
-                                outputStream.close();
-                            } catch (JSONException e) {
-                                // TODO Auto-generated catch block
-                                e.printStackTrace();
-                            } catch (SQLException e) {
-                                // TODO Auto-generated catch block
-                                e.printStackTrace();
+                                sendResponse(code, bytes, exchangeObject);
+                            } catch (Exception e) {
+                                System.out.println("Error: Query handler failed: " + e.getMessage());
                             }
                         }
                     } else if (jsonChecker.getQueryType(contentToJSON) == "time") {
@@ -104,16 +95,10 @@ public class WarningHandler implements HttpHandler {
                             String responseString = responseArray.toString();
                             code = 200;
                             bytes = responseString.getBytes("UTF-8");
-                            System.out.println("Status: Sending GET response");
-                            exchangeObject.sendResponseHeaders(code, bytes.length);
-                            final OutputStream outputStream = exchangeObject.getResponseBody();
-                            outputStream.write(bytes);
-                            outputStream.flush();
-                            outputStream.close();
+                            sendResponse(code, bytes, exchangeObject);
                         } catch (Exception e) {
-                            // TODO: handle exception
+                            System.out.println("Error: Query handler failed: " + e.getMessage());
                         }
-                    
                     } else {
                         code = 412;
                     }
@@ -185,12 +170,7 @@ public class WarningHandler implements HttpHandler {
                 /* Send the response */
                 code = 200;
                 bytes = responseString.getBytes("UTF-8");
-                System.out.println("Status: Sending GET response");
-                exchangeObject.sendResponseHeaders(code, bytes.length);
-                final OutputStream outputStream = exchangeObject.getResponseBody();
-                outputStream.write(bytes);
-                outputStream.flush();
-                outputStream.close();
+                sendResponse(code, bytes, exchangeObject);
             } catch (final Exception e) {
                 System.out.println("Error occured while getting messages: " + e.getMessage());
             }
@@ -207,5 +187,22 @@ public class WarningHandler implements HttpHandler {
             outputStream.flush();
             outputStream.close();
         }
+    }
+
+    private boolean sendResponse(int code, byte [] bytes, HttpExchange exchangeObject) {
+        System.out.println("Status: Sending GET response");
+
+        try {
+            exchangeObject.sendResponseHeaders(code, bytes.length);
+            final OutputStream outputStream = exchangeObject.getResponseBody();
+            outputStream.write(bytes);
+            outputStream.flush();
+            outputStream.close();
+            return true;
+        } catch (Exception e) {
+            System.out.println("Error: Something went wrong when sending the GET response: " + e.getMessage());
+        }
+
+        return false;
     }
 }
